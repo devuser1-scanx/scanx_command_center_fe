@@ -10,8 +10,8 @@ export default function AuthLayout({
   children,
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,#2d2d2d_0%,#1a1a1a_100%)] px-4 py-8 sm:px-6">
       {children}
-    </div>
+    </main>
   );
 }

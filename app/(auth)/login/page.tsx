@@ -1,17 +1,28 @@
 // app/(auth)/login/page.tsx
 
+import type { Metadata } from "next";
+
+import { AuthCard } from "@/components/auth/auth-card";
+import { LoginForm } from "@/components/auth/login-form";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  description:
+    "Sign in to the ScanX Command Center.",
+};
+
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">
-          ScanX Command Center
-        </h1>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          Login form will be added in the next step.
+    <AuthCard
+      title="Welcome To The ScanX Command Center"
+      description="Sign in to access the ScanX Command Center"
+      footer={
+        <p>
+          Authorized ScanX Health staff only.
         </p>
-      </div>
-    </main>
+      }
+    >
+      <LoginForm />
+    </AuthCard>
   );
 }
