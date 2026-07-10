@@ -1,17 +1,24 @@
-// app/(auth)/layout.tsx
+import type { Metadata } from "next";
 
-import type { ReactNode } from "react";
+import { AuthCard } from "@/components/auth/auth-card";
+import { ChangePasswordForm } from "@/components/auth/change-password-form";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
-type AuthLayoutProps = {
-  children: ReactNode;
+export const metadata: Metadata = {
+  title: "Change password",
+  description:
+    "Change your ScanX Command Center password.",
 };
 
-export default function AuthLayout({
-  children,
-}: AuthLayoutProps) {
+export default function ChangePasswordPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {children}
-    </div>
+    <ProtectedRoute>
+      <AuthCard
+        title="Change Password"
+        description="Choose a strong password that you have not used before."
+      >
+        <ChangePasswordForm />
+      </AuthCard>
+    </ProtectedRoute>
   );
 }

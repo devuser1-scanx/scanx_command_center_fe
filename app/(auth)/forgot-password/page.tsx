@@ -1,17 +1,21 @@
-// app/(auth)/forgot-password/page.tsx
+import type { Metadata } from "next";
+
+import { AuthCard } from "@/components/auth/auth-card";
+import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
+
+export const metadata: Metadata = {
+  title: "Forgot password",
+  description:
+    "Request password reset instructions for ScanX Command Center.",
+};
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">
-          Forgot Password
-        </h1>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          The forgot password form will be added shortly.
-        </p>
-      </div>
-    </main>
+    <AuthCard
+      title="Forgot Password"
+      description="Enter your email address and we will send password reset instructions."
+    >
+      <ForgotPasswordForm />
+    </AuthCard>
   );
 }

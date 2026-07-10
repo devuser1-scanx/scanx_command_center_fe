@@ -1,17 +1,30 @@
-// app/(auth)/reset-password/page.tsx
+import type { Metadata } from "next";
+import { Suspense } from "react";
+
+import { AuthCard } from "@/components/auth/auth-card";
+import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+
+export const metadata: Metadata = {
+  title: "Reset password",
+  description:
+    "Reset your ScanX Command Center password.",
+};
 
 export default function ResetPasswordPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold">
-          Reset Password
-        </h1>
-
-        <p className="mt-2 text-sm text-muted-foreground">
-          The reset password form will be added shortly.
-        </p>
-      </div>
-    </main>
+    <AuthCard
+      title="Reset Password"
+      description="Create a strong new password for your account."
+    >
+      <Suspense
+        fallback={
+          <p className="text-center text-sm text-[#999999]">
+            Loading reset form...
+          </p>
+        }
+      >
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthCard>
   );
 }

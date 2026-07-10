@@ -81,18 +81,35 @@ export function getApiErrorMessage(
   }
 
   if (Array.isArray(payload.detail)) {
-    const validationMessages = payload.detail
-      .map((item) => item.msg)
-      .filter(
-        (message): message is string =>
-          typeof message === "string" &&
-          message.length > 0,
-      );
+  const validationMessages = payload.detail
+    .map((item) => {
+      const field = item.loc?.at(-1);
 
-    if (validationMessages.length > 0) {
-      return validationMessages.join(" ");
-    }
+      if (
+        typeof field === "string" &&
+        typeof item.msg === "string"
+      ) {
+        const readableField = field
+          .replaceAll("_", " ")
+          .replace(/\b\w/g, (character) =>
+            character.toUpperCase(),
+          );
+
+        return `${readableField}: ${item.msg}`;
+      }
+
+      return item.msg;
+    })
+    .filter(
+      (message): message is string =>
+        typeof message === "string" &&
+        message.length > 0,
+    );
+
+  if (validationMessages.length > 0) {
+    return validationMessages.join(" ");
   }
+}
 
   if (
     typeof payload.message === "string" &&

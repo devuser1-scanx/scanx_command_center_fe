@@ -102,10 +102,21 @@ export function LoginForm() {
           className="mb-2 block text-sm font-medium text-[#2d2d2d]"
         >
           Email address
+            <span
+        aria-hidden="true"
+        className="ml-1 text-[#cc3333]"
+    >
+        *
+    </span>
+
+    <span className="sr-only">
+        required
+    </span>  
         </label>
 
         <input
           id="email"
+          required
           type="email"
           autoComplete="email"
           autoCapitalize="none"

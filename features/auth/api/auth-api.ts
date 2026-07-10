@@ -3,12 +3,15 @@
 import type {
   AuthUser,
   ChangePasswordRequest,
+  CurrentUserResponse,
   ForgotPasswordRequest,
   LoginRequest,
   LoginResponse,
   MessageResponse,
   ResetPasswordRequest,
 } from "@/features/auth/types/auth-types";
+
+import { normalizeAuthUser } from "@/features/auth/utils/normalize-auth-user";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { tokenManager } from "@/lib/auth/token-manager";
@@ -38,9 +41,12 @@ export async function login(
  * The API client automatically adds the access token.
  */
 export async function getCurrentUser(): Promise<AuthUser> {
-  return apiClient.get<AuthUser>(
-    API_ENDPOINTS.auth.me,
-  );
+  const response =
+    await apiClient.get<CurrentUserResponse>(
+      API_ENDPOINTS.auth.me,
+    );
+
+  return normalizeAuthUser(response);
 }
 
 /**

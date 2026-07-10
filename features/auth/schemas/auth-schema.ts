@@ -56,16 +56,16 @@ export const changePasswordSchema = z
 
     new_password: strongPasswordSchema,
 
-    confirm_password: z
+    confirm_new_password: z
       .string()
       .min(1, "Confirm your new password."),
   })
   .refine(
     (values) =>
-      values.new_password === values.confirm_password,
+      values.new_password === values.confirm_new_password,
     {
       message: "New password and confirmation do not match.",
-      path: ["confirm_password"],
+      path: ["confirm_new_password"],
     },
   )
   .refine(
@@ -86,16 +86,16 @@ export const resetPasswordSchema = z
 
     new_password: strongPasswordSchema,
 
-    confirm_password: z
+    confirm_new_password: z
       .string()
       .min(1, "Confirm your new password."),
   })
   .refine(
     (values) =>
-      values.new_password === values.confirm_password,
+      values.new_password === values.confirm_new_password,
     {
       message: "New password and confirmation do not match.",
-      path: ["confirm_password"],
+      path: ["confirm_new_password"],
     },
   );
 
