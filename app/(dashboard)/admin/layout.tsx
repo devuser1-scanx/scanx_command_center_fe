@@ -1,6 +1,9 @@
+// app/(dashboard)/admin/layout.tsx
+
 import type { ReactNode } from "react";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { AdminDashboardShell } from "@/components/layout/admin-dashboard-shell";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -11,7 +14,9 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
-      {children}
+      <AdminDashboardShell>
+        {children}
+      </AdminDashboardShell>
     </ProtectedRoute>
   );
 }
