@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
+
 import { SCANX_LOGO_BASE64 } from "@/lib/constants/branding";
 import { cn } from "@/lib/utils";
 
@@ -125,35 +126,34 @@ function SidebarLink({
   );
 }
 
-import { useState } from "react";
-import Image from "next/image";
-// ...
 export function AdminSidebar() {
-  const [logoError, setLogoError] = useState(false);
+  const logoSource = SCANX_LOGO_BASE64
+    ? SCANX_LOGO_BASE64.startsWith("data:image/")
+      ? SCANX_LOGO_BASE64
+      : `data:image/png;base64,${SCANX_LOGO_BASE64}`
+    : null;
 
   return (
     <aside className="hidden min-h-screen w-[260px] shrink-0 flex-col bg-[#111827] text-white lg:flex">
-      <div className="flex h-[65px] items-center justify-center border-b border-white/10 px-5">
-        {logoError ? (
-          <div className="text-2xl font-bold tracking-tight">
-            <span className="text-white">
-              Scan
-            </span>
-            <span className="text-[#8b6f47]">
-              X
-            </span>
-          </div>
-        ) : (
-          <Image
-            src={`data:image/png;base64,${SCANX_LOGO_BASE64}`}
-            alt="ScanX Logo"
-            width={150}
-            height={32}
-            className="object-contain invert brightness-200"
-            priority
-            onError={() => setLogoError(true)}
-          />
-        )}
+      <div className="border-b border-white/10 px-5 py-5">
+        <div className="flex items-center gap-3">
+          {logoSource ? (
+            <img
+              src={logoSource}
+              alt="ScanX"
+              className="h-10 w-auto max-w-[150px] object-contain"
+            />
+          ) : (
+            <div className="text-2xl font-bold tracking-tight">
+              <span className="text-white">
+                Scan
+              </span>
+              <span className="text-[#8b6f47]">
+                X
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-5">
@@ -164,10 +164,7 @@ export function AdminSidebar() {
 
           <nav className="space-y-1">
             {mainNavItems.map((item) => (
-              <SidebarLink
-                key={item.href}
-                item={item}
-              />
+              <SidebarLink key={item.href} item={item} />
             ))}
           </nav>
         </div>
