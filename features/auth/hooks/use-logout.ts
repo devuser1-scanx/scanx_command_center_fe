@@ -1,6 +1,5 @@
 // features/auth/hooks/use-logout.ts
 
-import { useRouter } from "next/navigation";
 import {
   useMutation,
   useQueryClient,
@@ -9,10 +8,8 @@ import {
 import { logout } from "@/features/auth/api/auth-api";
 import { normalizeApiError } from "@/lib/api/api-error";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { PUBLIC_ROUTES } from "@/lib/constants/routes";
 
 export function useLogout() {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const clearAuth = useAuthStore(
@@ -41,7 +38,10 @@ export function useLogout() {
     /**
      * onSettled runs whether logout succeeds or fails.
      *
-     * Local authentication must always be removed.
+     * Local authentication must always be removed. Navigation to /login is
+     * handled by ProtectedRoute reacting to isAuthenticated becoming false -
+     * navigating here too raced ProtectedRoute's own redirect and left the
+     * app stuck on the "Verifying your access..." screen.
      */
     onSettled: async () => {
       clearAuth();
@@ -53,9 +53,6 @@ export function useLogout() {
        * from the previous session.
        */
       queryClient.clear();
-
-      router.replace(PUBLIC_ROUTES.login);
-      router.refresh();
     },
   });
 }

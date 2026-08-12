@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   /**
    * Next.js blocks cross-origin requests to the dev server by default.
    * These wildcards let an ngrok tunnel (or similar) reach it without
