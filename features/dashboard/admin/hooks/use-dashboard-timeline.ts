@@ -114,6 +114,8 @@ export function useDashboardTimeline({
         );
       }
 
+      socketParams.set("date", params.date);
+
       socket = new WebSocket(
         `${toWebSocketUrl("/ws/dashboard/timeline")}?${socketParams.toString()}`,
       );
@@ -127,6 +129,17 @@ export function useDashboardTimeline({
           const message: TimelineSocketMessage = JSON.parse(
             event.data,
           );
+
+          /**
+           * The socket is reopened whenever params.date changes (it's a
+           * connect() effect dep below), but a stale in-flight connection
+           * for the previous date could still deliver one last message
+           * after that happens - guard against clobbering the newly
+           * selected date's cache entry with the old date's data.
+           */
+          if (message.date !== params.date) {
+            return;
+          }
 
           queryClient.setQueryData(
             queryKey,

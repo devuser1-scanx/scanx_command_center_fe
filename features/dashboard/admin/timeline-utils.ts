@@ -24,6 +24,17 @@ export function parseTimeToMinutes(time: string): number {
   return hour * 60 + minute;
 }
 
+export function formatTime12Hour(time: string): string {
+  const [hourText, minuteText] = time.split(":");
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+
+  return `${hour12}:${minuteText.padStart(2, "0")} ${period}`;
+}
+
 export function getStatusClasses(
   tone: TimelineAppointment["tone"],
 ) {

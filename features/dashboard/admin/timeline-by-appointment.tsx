@@ -16,9 +16,11 @@ import {
   Plus,
   RotateCcw,
 } from "lucide-react";
+import { addDays, format, parseISO } from "date-fns";
 
 import type { Clinic } from "@/features/dashboard/admin/api/dashboard-api";
 import { ClinicTimelineRow } from "@/features/dashboard/admin/clinic-timeline-row";
+import { TimelineDatePicker } from "@/features/dashboard/admin/timeline-date-picker";
 
 export type {
   TimelineAppointment,
@@ -32,12 +34,14 @@ export {
 
 type TimelineByAppointmentProps = {
   clinics: Clinic[];
+  /** ISO calendar date (yyyy-MM-dd) currently shown. */
   date: string;
+  onDateChange: (isoDate: string) => void;
 };
 
 const MIN_HOUR = 0;
 const MAX_HOUR = 24;
-const DEFAULT_START_HOUR = 7;
+const DEFAULT_START_HOUR = 8.5;
 const DEFAULT_END_HOUR = 18;
 const DEFAULT_HOUR_SPAN = DEFAULT_END_HOUR - DEFAULT_START_HOUR;
 const GUTTER_WIDTH_BASE = 180;
@@ -139,16 +143,18 @@ function formatTimeInTimeZone(
   }).format(date);
 }
 
-function formatDateInTimeZone(
+/** en-CA formats as yyyy-MM-dd, matching the ISO calendar date the API expects. */
+function getIsoDateInTimeZone(
   date: Date,
   timeZone: string,
 ): string {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(date);
+  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(
+    date,
+  );
+}
+
+function stepIsoDate(isoDate: string, days: number): string {
+  return format(addDays(parseISO(isoDate), days), "yyyy-MM-dd");
 }
 
 /**
@@ -200,6 +206,7 @@ function formatHour(hour: number): string {
 export function TimelineByAppointment({
   clinics,
   date,
+  onDateChange,
 }: TimelineByAppointmentProps) {
   const scrollRef =
     useRef<HTMLDivElement | null>(null);
@@ -321,15 +328,31 @@ export function TimelineByAppointment({
     clinics.find((clinic) => clinic.timezone)?.timezone ??
     FALLBACK_TIME_ZONE;
 
+  const todayIso = getIsoDateInTimeZone(now, clinicTimeZone);
+  const isViewingToday = date === todayIso;
+
   const nowMinutes = getMinutesSinceMidnightInTimeZone(
     now,
     clinicTimeZone,
   );
   const showNowLine =
+    isViewingToday &&
     nowMinutes >= visibleStart * 60 &&
     nowMinutes <= visibleEnd * 60;
   const nowLeftPx =
     ((nowMinutes - visibleStart * 60) / 60) * pxPerHour;
+
+  function goToPreviousDay() {
+    onDateChange(stepIsoDate(date, -1));
+  }
+
+  function goToNextDay() {
+    onDateChange(stepIsoDate(date, 1));
+  }
+
+  function goToToday() {
+    onDateChange(todayIso);
+  }
 
   function zoomIn() {
     setZoom((current) =>
@@ -419,16 +442,51 @@ export function TimelineByAppointment({
           </h3>
 
           <p className="mt-1 text-sm text-[#777777] 3xl:text-base 5xl:text-lg">
-            All clinics, 7 AM to 6 PM by default — scroll or zoom out to see the full day.
+            All clinics, 8:30 AM to 6 PM by default — scroll or zoom out to see the full day.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 3xl:gap-3">
+          <div className="flex rounded-md border border-[#e4ddd0] bg-[#fbfaf7] p-1">
+            <button
+              type="button"
+              onClick={goToPreviousDay}
+              className="inline-flex h-7 w-7 items-center justify-center rounded text-[#2d2d2d] hover:bg-white 3xl:h-9 3xl:w-9"
+              aria-label="Previous day"
+            >
+              <ChevronLeft className="size-4 3xl:size-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={goToNextDay}
+              className="inline-flex h-7 w-7 items-center justify-center rounded text-[#2d2d2d] hover:bg-white 3xl:h-9 3xl:w-9"
+              aria-label="Next day"
+            >
+              <ChevronRight className="size-4 3xl:size-5" />
+            </button>
+          </div>
+
+          <TimelineDatePicker
+            value={date}
+            onChange={onDateChange}
+          />
+
+          {!isViewingToday && (
+            <button
+              type="button"
+              onClick={goToToday}
+              className="rounded-md border border-[#e4ddd0] bg-[#fbfaf7] px-3 py-1.5 text-xs font-bold text-[#6f5636] transition hover:border-[#8b6f47] hover:text-[#8b6f47] 3xl:px-4 3xl:py-2 3xl:text-sm"
+            >
+              Today
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => scrollTimeline("left")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e4ddd0] bg-[#fbfaf7] text-[#2d2d2d] transition hover:border-[#8b6f47] hover:text-[#8b6f47] 3xl:h-11 3xl:w-11"
-            aria-label="Scroll timeline left"
+            aria-label="Pan timeline left"
           >
             <ChevronLeft className="size-4 3xl:size-5" />
           </button>
@@ -437,14 +495,16 @@ export function TimelineByAppointment({
             type="button"
             onClick={() => scrollTimeline("right")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e4ddd0] bg-[#fbfaf7] text-[#2d2d2d] transition hover:border-[#8b6f47] hover:text-[#8b6f47] 3xl:h-11 3xl:w-11"
-            aria-label="Scroll timeline right"
+            aria-label="Pan timeline right"
           >
             <ChevronRight className="size-4 3xl:size-5" />
           </button>
 
-          <span className="rounded-full bg-[#fff2df] px-3 py-1.5 text-xs font-bold text-[#b45309] 3xl:px-4 3xl:py-2 3xl:text-sm 5xl:text-base">
-            Now {formatTimeInTimeZone(now, clinicTimeZone)}
-          </span>
+          {isViewingToday && (
+            <span className="rounded-full bg-[#fff2df] px-3 py-1.5 text-xs font-bold text-[#b45309] 3xl:px-4 3xl:py-2 3xl:text-sm 5xl:text-base">
+              Now {formatTimeInTimeZone(now, clinicTimeZone)}
+            </span>
+          )}
 
           <div className="flex rounded-md border border-[#e4ddd0] bg-[#fbfaf7] p-1">
             <button
@@ -496,7 +556,7 @@ export function TimelineByAppointment({
               }}
             >
               <span className="text-xs font-bold uppercase tracking-wide text-[#8b6f47] 3xl:text-sm 5xl:text-base">
-                {formatDateInTimeZone(now, clinicTimeZone)}
+                {format(parseISO(date), "EEE, MMM d")}
               </span>
             </div>
 

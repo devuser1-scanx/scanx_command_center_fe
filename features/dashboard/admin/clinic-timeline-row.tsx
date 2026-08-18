@@ -9,6 +9,7 @@ import type { Clinic } from "@/features/dashboard/admin/api/dashboard-api";
 import { useDashboardTimeline } from "@/features/dashboard/admin/hooks/use-dashboard-timeline";
 import {
   computeAppointmentLayout,
+  formatTime12Hour,
   getStatusClasses,
   parseTimeToMinutes,
 } from "@/features/dashboard/admin/timeline-utils";
@@ -164,7 +165,7 @@ export function ClinicTimelineRow({
                   <span className="font-bold text-[#2d2d2d]">
                     Time:
                   </span>{" "}
-                  {appointment.time}
+                  {formatTime12Hour(appointment.time)}
                 </p>
               </div>
             </div>

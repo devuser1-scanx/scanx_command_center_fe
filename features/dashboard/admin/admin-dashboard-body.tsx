@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useState } from "react";
 
 import { TimelineByAppointment } from "@/features/dashboard/admin/timeline-by-appointment";
 import { useClinics } from "@/features/dashboard/admin/hooks/use-clinics";
@@ -18,7 +18,7 @@ function todayIsoDate(): string {
 
 export function AdminDashboardBody() {
   const clinicsQuery = useClinics();
-  const date = useMemo(() => todayIsoDate(), []);
+  const [date, setDate] = useState(todayIsoDate);
 
   if (clinicsQuery.isError) {
     return (
@@ -52,6 +52,7 @@ export function AdminDashboardBody() {
     <TimelineByAppointment
       clinics={clinicsQuery.data}
       date={date}
+      onDateChange={setDate}
     />
   );
 }
