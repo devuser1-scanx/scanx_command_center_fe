@@ -4,6 +4,10 @@
 
 import Link from "next/link";
 
+import {
+  ActionButton,
+  ActionMenuButton,
+} from "@/features/patients/patient-action-buttons";
 import { usePatientProfile } from "@/features/patients/hooks/use-patient-profile";
 import { getStatusClasses } from "@/features/dashboard/admin/timeline-utils";
 import { cn } from "@/lib/utils";
@@ -148,6 +152,45 @@ export function PatientProfileView({
               Fax
             </button>
           </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 border-t border-[#e4ddd0] pt-4">
+          <ActionButton
+            label="Waiting"
+            className="bg-[#b45309] hover:bg-[#92400e]"
+          />
+
+          <ActionMenuButton
+            label="Reschedule Link"
+            className="bg-[#7c3aed] hover:bg-[#6d28d9]"
+            options={["Mail", "Text"]}
+          />
+
+          <ActionButton
+            label="Ask For Review"
+            className="bg-[#16a34a] hover:bg-[#15803d]"
+          />
+
+          <ActionButton
+            label="Directions"
+            className="bg-[#0891b2] hover:bg-[#0e7490]"
+          />
+
+          <ActionButton
+            label="Send PCP Form"
+            className="bg-[#4338ca] hover:bg-[#3730a3]"
+          />
+
+          <ActionButton
+            label="Send TV/Consent Form"
+            className="bg-[#c2410c] hover:bg-[#9a3412]"
+          />
+
+          <ActionMenuButton
+            label="Report"
+            className="bg-[#be123c] hover:bg-[#9f1239]"
+            options={["Text", "Email", "FAX"]}
+          />
         </div>
       </section>
 
