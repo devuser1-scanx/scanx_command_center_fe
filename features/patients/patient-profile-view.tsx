@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 import {
@@ -9,6 +10,7 @@ import {
   ActionMenuButton,
 } from "@/features/patients/patient-action-buttons";
 import { usePatientProfile } from "@/features/patients/hooks/use-patient-profile";
+import { SendFaxDialog } from "@/features/patients/send-fax-dialog";
 import { getStatusClasses } from "@/features/dashboard/admin/timeline-utils";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +85,7 @@ export function PatientProfileView({
   appointmentId,
 }: PatientProfileViewProps) {
   const profileQuery = usePatientProfile(appointmentId);
+  const [isFaxDialogOpen, setIsFaxDialogOpen] = useState(false);
 
   if (profileQuery.isLoading) {
     return (
@@ -146,8 +149,8 @@ export function PatientProfileView({
 
             <button
               type="button"
+              onClick={() => setIsFaxDialogOpen(true)}
               className="rounded-md bg-[#8b6f47] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6f5636]"
-              title="Not yet connected to a fax service"
             >
               Fax
             </button>
@@ -514,6 +517,13 @@ export function PatientProfileView({
           </SectionCard>
         </div>
       </div>
+
+      <SendFaxDialog
+        open={isFaxDialogOpen}
+        onOpenChange={setIsFaxDialogOpen}
+        appointmentId={profile.selectedAppointmentId}
+        physicianFaxNo={profile.intake?.physicianFaxNo ?? null}
+      />
     </div>
   );
 }

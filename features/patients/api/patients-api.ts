@@ -101,6 +101,26 @@ export type PaymentInfo = {
   paymentLink: string | null;
 };
 
+export type FaxTransmissionItem = {
+  id: number;
+  fileName: string;
+  status: string;
+  westfaxJobId: string | null;
+  errorMessage: string | null;
+};
+
+export type SendFaxResult = {
+  destinationNumber: string;
+  westfaxJobId: string | null;
+  transmissions: FaxTransmissionItem[];
+  createdAt: string;
+};
+
+export type FaxReportLookupResult = {
+  found: boolean;
+  fileName: string | null;
+};
+
 export type PatientProfile = {
   patient: string;
   phone: string | null;
@@ -230,6 +250,26 @@ type ApiPatientProfileResponse = {
   reports: ApiReportItem[];
   uploads: ApiUploadItem[];
   payment: ApiPaymentInfo;
+};
+
+type ApiFaxTransmissionItem = {
+  id: number;
+  file_name: string;
+  status: string;
+  westfax_job_id: string | null;
+  error_message: string | null;
+};
+
+type ApiSendFaxResponse = {
+  destination_number: string;
+  westfax_job_id: string | null;
+  transmissions: ApiFaxTransmissionItem[];
+  created_at: string;
+};
+
+type ApiFaxReportLookupResponse = {
+  found: boolean;
+  file_name: string | null;
 };
 
 function mapPatientSummary(item: ApiPatientSummary): PatientSummary {
@@ -400,4 +440,59 @@ export async function getPatientProfile(
   );
 
   return mapPatientProfile(response);
+}
+
+function mapFaxTransmission(
+  item: ApiFaxTransmissionItem,
+): FaxTransmissionItem {
+  return {
+    id: item.id,
+    fileName: item.file_name,
+    status: item.status,
+    westfaxJobId: item.westfax_job_id,
+    errorMessage: item.error_message,
+  };
+}
+
+export async function sendFax(
+  appointmentId: string,
+  input: {
+    destinationNumber: string;
+    includeReport: boolean;
+    files: File[];
+  },
+): Promise<SendFaxResult> {
+  const formData = new FormData();
+
+  formData.append("destination_number", input.destinationNumber);
+  formData.append("include_report", String(input.includeReport));
+
+  for (const file of input.files) {
+    formData.append("files", file);
+  }
+
+  const response = await apiClient.post<ApiSendFaxResponse>(
+    API_ENDPOINTS.patients.sendFax(appointmentId),
+    formData,
+  );
+
+  return {
+    destinationNumber: response.destination_number,
+    westfaxJobId: response.westfax_job_id,
+    transmissions: response.transmissions.map(mapFaxTransmission),
+    createdAt: response.created_at,
+  };
+}
+
+export async function getFaxReportLookup(
+  appointmentId: string,
+): Promise<FaxReportLookupResult> {
+  const response = await apiClient.get<ApiFaxReportLookupResponse>(
+    API_ENDPOINTS.patients.faxReportLookup(appointmentId),
+  );
+
+  return {
+    found: response.found,
+    fileName: response.file_name,
+  };
 }
