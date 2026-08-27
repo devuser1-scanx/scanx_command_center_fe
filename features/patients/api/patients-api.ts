@@ -121,6 +121,21 @@ export type FaxReportLookupResult = {
   fileName: string | null;
 };
 
+export type MailTransmissionItem = {
+  id: number;
+  fileName: string;
+  status: string;
+  gmailMessageId: string | null;
+  errorMessage: string | null;
+};
+
+export type SendMailResult = {
+  toAddresses: string;
+  gmailMessageId: string | null;
+  transmissions: MailTransmissionItem[];
+  createdAt: string;
+};
+
 export type PatientProfile = {
   patient: string;
   phone: string | null;
@@ -270,6 +285,21 @@ type ApiSendFaxResponse = {
 type ApiFaxReportLookupResponse = {
   found: boolean;
   file_name: string | null;
+};
+
+type ApiMailTransmissionItem = {
+  id: number;
+  file_name: string;
+  status: string;
+  gmail_message_id: string | null;
+  error_message: string | null;
+};
+
+type ApiSendMailResponse = {
+  to_addresses: string;
+  gmail_message_id: string | null;
+  transmissions: ApiMailTransmissionItem[];
+  created_at: string;
 };
 
 function mapPatientSummary(item: ApiPatientSummary): PatientSummary {
@@ -494,5 +524,62 @@ export async function getFaxReportLookup(
   return {
     found: response.found,
     fileName: response.file_name,
+  };
+}
+
+function mapMailTransmission(
+  item: ApiMailTransmissionItem,
+): MailTransmissionItem {
+  return {
+    id: item.id,
+    fileName: item.file_name,
+    status: item.status,
+    gmailMessageId: item.gmail_message_id,
+    errorMessage: item.error_message,
+  };
+}
+
+export async function sendMail(
+  appointmentId: string,
+  input: {
+    to: string;
+    cc: string;
+    bcc: string;
+    subject: string;
+    bodyHtml: string;
+    includeReport: boolean;
+    files: File[];
+  },
+): Promise<SendMailResult> {
+  const formData = new FormData();
+
+  formData.append("to", input.to);
+
+  if (input.cc) {
+    formData.append("cc", input.cc);
+  }
+
+  if (input.bcc) {
+    formData.append("bcc", input.bcc);
+  }
+
+  formData.append("subject", input.subject);
+  formData.append("body_html", input.bodyHtml);
+  formData.append("include_report", String(input.includeReport));
+
+  for (const file of input.files) {
+    formData.append("files", file);
+  }
+
+  const response = await apiClient.post<ApiSendMailResponse>(
+    API_ENDPOINTS.patients.sendMail(appointmentId),
+    formData,
+  );
+
+  return {
+    toAddresses: response.to_addresses,
+    gmailMessageId: response.gmail_message_id,
+    transmissions: response.transmissions.map(mapMailTransmission),
+    createdAt: response.created_at,
   };
 }

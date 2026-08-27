@@ -11,6 +11,7 @@ import {
 } from "@/features/patients/patient-action-buttons";
 import { usePatientProfile } from "@/features/patients/hooks/use-patient-profile";
 import { SendFaxDialog } from "@/features/patients/send-fax-dialog";
+import { SendMailDialog } from "@/features/patients/send-mail-dialog";
 import { getStatusClasses } from "@/features/dashboard/admin/timeline-utils";
 import { cn } from "@/lib/utils";
 
@@ -81,11 +82,29 @@ function Field({
   );
 }
 
+const VISITS_PER_PAGE = 15;
+
 export function PatientProfileView({
   appointmentId,
 }: PatientProfileViewProps) {
   const profileQuery = usePatientProfile(appointmentId);
   const [isFaxDialogOpen, setIsFaxDialogOpen] = useState(false);
+  const [isMailDialogOpen, setIsMailDialogOpen] = useState(false);
+  const [visitsPage, setVisitsPage] = useState(1);
+
+  /**
+   * Reset to page 1 whenever a different patient is loaded.
+   *
+   * Adjusted during render (rather than in a useEffect) per React's
+   * guidance for resetting state when a prop changes - see
+   * https://react.dev/learn/you-might-not-need-an-effect
+   */
+  const [lastAppointmentId, setLastAppointmentId] = useState(appointmentId);
+
+  if (appointmentId !== lastAppointmentId) {
+    setLastAppointmentId(appointmentId);
+    setVisitsPage(1);
+  }
 
   if (profileQuery.isLoading) {
     return (
@@ -121,6 +140,16 @@ export function PatientProfileView({
       visit.appointmentId === profile.selectedAppointmentId,
   );
 
+  const totalVisitPages = Math.max(
+    1,
+    Math.ceil(profile.visits.length / VISITS_PER_PAGE),
+  );
+  const currentVisitsPage = Math.min(visitsPage, totalVisitPages);
+  const visibleVisits = profile.visits.slice(
+    (currentVisitsPage - 1) * VISITS_PER_PAGE,
+    currentVisitsPage * VISITS_PER_PAGE,
+  );
+
   return (
     <div className="space-y-5">
       <Link
@@ -141,8 +170,8 @@ export function PatientProfileView({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={() => setIsMailDialogOpen(true)}
               className="rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
-              title="Not yet connected to a mail service"
             >
               Mail
             </button>
@@ -204,7 +233,7 @@ export function PatientProfileView({
           </h3>
 
           <div className="mt-3 space-y-2">
-            {profile.visits.map((visit) => {
+            {visibleVisits.map((visit) => {
               const classes = getStatusClasses(visit.tone);
               const isSelected =
                 visit.appointmentId ===
@@ -247,6 +276,38 @@ export function PatientProfileView({
               );
             })}
           </div>
+
+          {totalVisitPages > 1 && (
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#e4ddd0] pt-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setVisitsPage((page) => Math.max(1, page - 1))
+                }
+                disabled={currentVisitsPage <= 1}
+                className="rounded-md border border-[#e4ddd0] px-2.5 py-1 text-xs font-semibold text-[#2d2d2d] transition hover:bg-[#f5f1e8] disabled:pointer-events-none disabled:opacity-50"
+              >
+                Prev
+              </button>
+
+              <span className="text-xs text-[#777777]">
+                Page {currentVisitsPage} of {totalVisitPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setVisitsPage((page) =>
+                    Math.min(totalVisitPages, page + 1),
+                  )
+                }
+                disabled={currentVisitsPage >= totalVisitPages}
+                className="rounded-md border border-[#e4ddd0] px-2.5 py-1 text-xs font-semibold text-[#2d2d2d] transition hover:bg-[#f5f1e8] disabled:pointer-events-none disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </section>
 
         <div className="space-y-5">
@@ -523,6 +584,13 @@ export function PatientProfileView({
         onOpenChange={setIsFaxDialogOpen}
         appointmentId={profile.selectedAppointmentId}
         physicianFaxNo={profile.intake?.physicianFaxNo ?? null}
+      />
+
+      <SendMailDialog
+        open={isMailDialogOpen}
+        onOpenChange={setIsMailDialogOpen}
+        appointmentId={profile.selectedAppointmentId}
+        physicianEmail={profile.intake?.physicianEmail ?? null}
       />
     </div>
   );

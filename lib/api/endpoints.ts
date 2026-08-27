@@ -81,6 +81,9 @@ export const API_ENDPOINTS = {
 
     faxReportLookup: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}/fax/report`,
+
+    sendMail: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/mail`,
   },
 
   dashboard: {
