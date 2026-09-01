@@ -599,7 +599,7 @@ export function PatientProfileView({
         open={isMailDialogOpen}
         onOpenChange={setIsMailDialogOpen}
         appointmentId={profile.selectedAppointmentId}
-        physicianEmail={profile.intake?.physicianEmail ?? null}
+        patientEmail={profile.email}
         patientName={profile.patient}
         dob={profile.intake?.dob ?? null}
         examType={selectedVisit?.exam ?? null}

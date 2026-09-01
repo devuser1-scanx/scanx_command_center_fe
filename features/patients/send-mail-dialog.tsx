@@ -23,7 +23,7 @@ type SendMailDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appointmentId: string;
-  physicianEmail: string | null;
+  patientEmail: string | null;
   patientName: string;
   dob: string | null;
   examType: string | null;
@@ -54,11 +54,11 @@ function splitPatientName(patientName: string): {
 }
 
 /**
- * firstname_lastname_DOB_Ultrasound_Report. Falls back to omitting DOB if
- * it isn't on file.
+ * "Firstname Lastname DOB Ultrasound Report". Falls back to omitting DOB
+ * if it isn't on file.
  */
 function buildMailSubject(patientName: string, dob: string | null): string {
-  const namePart = patientName.trim().replace(/\s+/g, "_");
+  const namePart = patientName.trim();
 
   if (!namePart) {
     return "";
@@ -67,8 +67,8 @@ function buildMailSubject(patientName: string, dob: string | null): string {
   const dobPart = (dob ?? "").trim();
 
   return dobPart
-    ? `${namePart}_${dobPart}_Ultrasound_Report`
-    : `${namePart}_Ultrasound_Report`;
+    ? `${namePart} ${dobPart} Ultrasound Report`
+    : `${namePart} Ultrasound Report`;
 }
 
 // Must match SCANX_LOGO_CONTENT_ID in app/integrations/gmail_client.py -
@@ -138,7 +138,7 @@ export function SendMailDialog({
   open,
   onOpenChange,
   appointmentId,
-  physicianEmail,
+  patientEmail,
   patientName,
   dob,
   examType,
@@ -172,7 +172,7 @@ export function SendMailDialog({
     setWasOpen(open);
 
     if (open) {
-      setTo(physicianEmail ?? "");
+      setTo(patientEmail ?? "");
       setCc("");
       setBcc("");
       setSubject(buildMailSubject(patientName, dob));

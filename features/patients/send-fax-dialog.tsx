@@ -41,13 +41,13 @@ function buildFaxAddress(rawNumber: string | null): string {
 
 /**
  * Mirrors the backend's _build_fax_subject in app/services/fax.py:
- * firstname_lastname_Fibroscan-Report for FibroScan / Liver Elastography,
- * firstname_lastname_<exam type>-Report otherwise. This is only the
+ * "Firstname Lastname Fibroscan Report" for FibroScan / Liver Elastography,
+ * "Firstname Lastname <exam type> Report" otherwise. This is only the
  * prefilled default - the user can edit it, and the backend recomputes the
  * same default itself if the field is left blank.
  */
 function buildFaxSubject(patientName: string, examType: string | null): string {
-  const namePart = patientName.trim().replace(/\s+/g, "_");
+  const namePart = patientName.trim();
   const type = (examType ?? "").trim();
 
   if (!namePart || !type) {
@@ -56,7 +56,7 @@ function buildFaxSubject(patientName: string, examType: string | null): string {
 
   const reportType = type.toLowerCase().includes("fibro") ? "Fibroscan" : type;
 
-  return `${namePart}_${reportType}-Report`;
+  return `${namePart} ${reportType} Report`;
 }
 
 export function SendFaxDialog({
