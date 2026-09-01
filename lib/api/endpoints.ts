@@ -84,6 +84,12 @@ export const API_ENDPOINTS = {
 
     sendMail: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}/mail`,
+
+    sendSms: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/sms`,
+
+    smsPrefill: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/sms/prefill`,
   },
 
   dashboard: {

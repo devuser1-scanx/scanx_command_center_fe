@@ -9,9 +9,11 @@ import { cn } from "@/lib/utils";
 export function ActionButton({
   label,
   className,
+  onClick,
 }: {
   label: string;
   className: string;
+  onClick?: () => void;
 }) {
   return (
     <button
@@ -20,7 +22,8 @@ export function ActionButton({
         "rounded-md px-4 py-2 text-sm font-semibold text-white transition",
         className,
       )}
-      title="Not yet wired to a backend action"
+      onClick={onClick}
+      title={onClick ? undefined : "Not yet wired to a backend action"}
     >
       {label}
     </button>

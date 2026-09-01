@@ -12,6 +12,10 @@ import {
 import { usePatientProfile } from "@/features/patients/hooks/use-patient-profile";
 import { SendFaxDialog } from "@/features/patients/send-fax-dialog";
 import { SendMailDialog } from "@/features/patients/send-mail-dialog";
+import {
+  SendSmsDialog,
+  type SmsPurpose,
+} from "@/features/patients/send-sms-dialog";
 import { getStatusClasses } from "@/features/dashboard/admin/timeline-utils";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +94,7 @@ export function PatientProfileView({
   const profileQuery = usePatientProfile(appointmentId);
   const [isFaxDialogOpen, setIsFaxDialogOpen] = useState(false);
   const [isMailDialogOpen, setIsMailDialogOpen] = useState(false);
+  const [smsPurpose, setSmsPurpose] = useState<SmsPurpose | null>(null);
   const [visitsPage, setVisitsPage] = useState(1);
 
   /**
@@ -201,11 +206,13 @@ export function PatientProfileView({
           <ActionButton
             label="Ask For Review"
             className="bg-[#16a34a] hover:bg-[#15803d]"
+            onClick={() => setSmsPurpose("ask_for_review")}
           />
 
           <ActionButton
             label="Directions"
             className="bg-[#0891b2] hover:bg-[#0e7490]"
+            onClick={() => setSmsPurpose("directions")}
           />
 
           <ActionButton
@@ -596,6 +603,19 @@ export function PatientProfileView({
         patientName={profile.patient}
         dob={profile.intake?.dob ?? null}
         examType={selectedVisit?.exam ?? null}
+      />
+
+      <SendSmsDialog
+        open={smsPurpose !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSmsPurpose(null);
+          }
+        }}
+        appointmentId={profile.selectedAppointmentId}
+        purpose={smsPurpose ?? "ask_for_review"}
+        patientName={profile.patient}
+        patientPhone={profile.phone}
       />
     </div>
   );

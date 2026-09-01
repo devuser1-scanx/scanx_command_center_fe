@@ -136,6 +136,20 @@ export type SendMailResult = {
   createdAt: string;
 };
 
+export type SmsPrefillResult = {
+  phone: string | null;
+  directionsLink: string | null;
+};
+
+export type SendSmsResult = {
+  id: number;
+  destinationNumber: string;
+  status: string;
+  twilioMessageSid: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+};
+
 export type PatientProfile = {
   patient: string;
   phone: string | null;
@@ -299,6 +313,20 @@ type ApiSendMailResponse = {
   to_addresses: string;
   gmail_message_id: string | null;
   transmissions: ApiMailTransmissionItem[];
+  created_at: string;
+};
+
+type ApiSmsPrefillResponse = {
+  phone: string | null;
+  directions_link: string | null;
+};
+
+type ApiSendSmsResponse = {
+  id: number;
+  destination_number: string;
+  status: string;
+  twilio_message_sid: string | null;
+  error_message: string | null;
   created_at: string;
 };
 
@@ -586,6 +614,48 @@ export async function sendMail(
     toAddresses: response.to_addresses,
     gmailMessageId: response.gmail_message_id,
     transmissions: response.transmissions.map(mapMailTransmission),
+    createdAt: response.created_at,
+  };
+}
+
+export async function getSmsPrefill(
+  appointmentId: string,
+): Promise<SmsPrefillResult> {
+  const response = await apiClient.get<ApiSmsPrefillResponse>(
+    API_ENDPOINTS.patients.smsPrefill(appointmentId),
+  );
+
+  return {
+    phone: response.phone,
+    directionsLink: response.directions_link,
+  };
+}
+
+export async function sendSms(
+  appointmentId: string,
+  input: {
+    purpose: string;
+    destinationNumber: string;
+    body: string;
+  },
+): Promise<SendSmsResult> {
+  const formData = new FormData();
+
+  formData.append("purpose", input.purpose);
+  formData.append("destination_number", input.destinationNumber);
+  formData.append("body", input.body);
+
+  const response = await apiClient.post<ApiSendSmsResponse>(
+    API_ENDPOINTS.patients.sendSms(appointmentId),
+    formData,
+  );
+
+  return {
+    id: response.id,
+    destinationNumber: response.destination_number,
+    status: response.status,
+    twilioMessageSid: response.twilio_message_sid,
+    errorMessage: response.error_message,
     createdAt: response.created_at,
   };
 }
