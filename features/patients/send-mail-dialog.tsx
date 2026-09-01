@@ -24,9 +24,85 @@ type SendMailDialogProps = {
   onOpenChange: (open: boolean) => void;
   appointmentId: string;
   physicianEmail: string | null;
+  patientName: string;
+  dob: string | null;
+  examType: string | null;
 };
 
-const DEFAULT_SUBJECT = "TEST SUBJECT";
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function splitPatientName(patientName: string): {
+  firstName: string;
+  lastName: string;
+} {
+  const parts = patientName.trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) {
+    return { firstName: "", lastName: "" };
+  }
+
+  const [firstName, ...rest] = parts;
+
+  return { firstName, lastName: rest.join(" ") };
+}
+
+/**
+ * firstname_lastname_DOB_Ultrasound_Report. Falls back to omitting DOB if
+ * it isn't on file.
+ */
+function buildMailSubject(patientName: string, dob: string | null): string {
+  const namePart = patientName.trim().replace(/\s+/g, "_");
+
+  if (!namePart) {
+    return "";
+  }
+
+  const dobPart = (dob ?? "").trim();
+
+  return dobPart
+    ? `${namePart}_${dobPart}_Ultrasound_Report`
+    : `${namePart}_Ultrasound_Report`;
+}
+
+// Must match SCANX_LOGO_CONTENT_ID in app/integrations/gmail_client.py -
+// the backend always attaches the actual logo bytes as an inline
+// Content-ID image under this same id, regardless of what's in the body,
+// so this <img> tag resolves to the real ScanX animated logo once sent.
+const SCANX_LOGO_CONTENT_ID = "scanx-logo";
+
+function buildMailBodyHtml(
+  patientName: string,
+  dob: string | null,
+  examType: string | null,
+): string {
+  const { firstName, lastName } = splitPatientName(patientName);
+
+  return `
+<p>Hi,</p>
+<p>Thanks for your time. Please find the attached ultrasound report for the patient listed below.</p>
+<p>
+First Name: ${escapeHtml(firstName)}<br>
+Last Name: ${escapeHtml(lastName)}<br>
+DOB: ${escapeHtml((dob ?? "").trim())}<br>
+Examination: ${escapeHtml((examType ?? "").trim())}
+</p>
+<p>Please feel free to reach out if there are any questions.</p>
+<p>Regards,<br><strong>ScanX Support Team</strong></p>
+<p><img src="cid:${SCANX_LOGO_CONTENT_ID}" alt="ScanX" width="165" height="60" /></p>
+<p>
+<a href="https://www.scanx.care">www.scanx.care</a><br>
+Clinic Ph: (469) 804-6999<br>
+Clinic Fax: (469) 429-7432
+</p>
+`.trim();
+}
 
 function TextField({
   label,
@@ -63,11 +139,14 @@ export function SendMailDialog({
   onOpenChange,
   appointmentId,
   physicianEmail,
+  patientName,
+  dob,
+  examType,
 }: SendMailDialogProps) {
   const [to, setTo] = useState("");
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
-  const [subject, setSubject] = useState(DEFAULT_SUBJECT);
+  const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
   const [reportRemoved, setReportRemoved] = useState(false);
   const [lookupCancelled, setLookupCancelled] = useState(false);
@@ -96,8 +175,8 @@ export function SendMailDialog({
       setTo(physicianEmail ?? "");
       setCc("");
       setBcc("");
-      setSubject(DEFAULT_SUBJECT);
-      setBodyHtml("");
+      setSubject(buildMailSubject(patientName, dob));
+      setBodyHtml(buildMailBodyHtml(patientName, dob, examType));
       setReportRemoved(false);
       setLookupCancelled(false);
       setPrimaryUploadFile(null);
@@ -147,7 +226,7 @@ export function SendMailDialog({
             type="email"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField
               label="CC"
               value={cc}

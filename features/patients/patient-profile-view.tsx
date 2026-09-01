@@ -171,7 +171,7 @@ export function PatientProfileView({
             <button
               type="button"
               onClick={() => setIsMailDialogOpen(true)}
-              className="rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+              className="rounded-md bg-[#2563eb] px-20 py-4 text-xl font-semibold text-white transition hover:bg-[#1d4ed8]"
             >
               Mail
             </button>
@@ -179,7 +179,7 @@ export function PatientProfileView({
             <button
               type="button"
               onClick={() => setIsFaxDialogOpen(true)}
-              className="rounded-md bg-[#8b6f47] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6f5636]"
+              className="rounded-md bg-[#8b6f47] px-20 py-4 text-xl font-semibold text-white transition hover:bg-[#6f5636]"
             >
               Fax
             </button>
@@ -593,6 +593,9 @@ export function PatientProfileView({
         onOpenChange={setIsMailDialogOpen}
         appointmentId={profile.selectedAppointmentId}
         physicianEmail={profile.intake?.physicianEmail ?? null}
+        patientName={profile.patient}
+        dob={profile.intake?.dob ?? null}
+        examType={selectedVisit?.exam ?? null}
       />
     </div>
   );

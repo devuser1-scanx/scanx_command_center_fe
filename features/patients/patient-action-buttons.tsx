@@ -67,7 +67,7 @@ export function ActionMenuButton({
             <button
               key={option}
               type="button"
-              className="block w-full px-4 py-2 text-left text-sm font-semibold text-[#2d2d2d] transition hover:bg-[#fbfaf7]"
+              className="block w-full px-4 py-10 text-left text-lg font-semibold text-[#2d2d2d] transition hover:bg-[#fbfaf7]"
               title="Not yet wired to a backend action"
             >
               {option}
