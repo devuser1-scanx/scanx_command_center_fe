@@ -23,15 +23,52 @@ type SendFaxDialogProps = {
   onOpenChange: (open: boolean) => void;
   appointmentId: string;
   physicianFaxNo: string | null;
+  patientName: string;
+  examType: string | null;
 };
+
+const WESTFAX_EMAIL_DOMAIN = "westfax.com";
+
+function buildFaxAddress(rawNumber: string | null): string {
+  if (!rawNumber) {
+    return "";
+  }
+
+  const digits = rawNumber.replace(/\D/g, "");
+
+  return digits ? `${digits}@${WESTFAX_EMAIL_DOMAIN}` : "";
+}
+
+/**
+ * Mirrors the backend's _build_fax_subject in app/services/fax.py:
+ * firstname_lastname_Fibroscan-Report for FibroScan / Liver Elastography,
+ * firstname_lastname_<exam type>-Report otherwise. This is only the
+ * prefilled default - the user can edit it, and the backend recomputes the
+ * same default itself if the field is left blank.
+ */
+function buildFaxSubject(patientName: string, examType: string | null): string {
+  const namePart = patientName.trim().replace(/\s+/g, "_");
+  const type = (examType ?? "").trim();
+
+  if (!namePart || !type) {
+    return "";
+  }
+
+  const reportType = type.toLowerCase().includes("fibro") ? "Fibroscan" : type;
+
+  return `${namePart}_${reportType}-Report`;
+}
 
 export function SendFaxDialog({
   open,
   onOpenChange,
   appointmentId,
   physicianFaxNo,
+  patientName,
+  examType,
 }: SendFaxDialogProps) {
-  const [destinationNumber, setDestinationNumber] = useState("");
+  const [destinationAddress, setDestinationAddress] = useState("");
+  const [subject, setSubject] = useState("");
   const [reportRemoved, setReportRemoved] = useState(false);
   const [lookupCancelled, setLookupCancelled] = useState(false);
   const [primaryUploadFile, setPrimaryUploadFile] = useState<File | null>(
@@ -56,7 +93,8 @@ export function SendFaxDialog({
     setWasOpen(open);
 
     if (open) {
-      setDestinationNumber(physicianFaxNo ?? "");
+      setDestinationAddress(buildFaxAddress(physicianFaxNo));
+      setSubject(buildFaxSubject(patientName, examType));
       setReportRemoved(false);
       setLookupCancelled(false);
       setPrimaryUploadFile(null);
@@ -79,7 +117,8 @@ export function SendFaxDialog({
 
     sendFaxMutation.mutate(
       {
-        destinationNumber,
+        destinationNumber: destinationAddress,
+        subject,
         includeReport: showDetectedReport,
         files,
       },
@@ -101,20 +140,38 @@ export function SendFaxDialog({
         <div className="space-y-4">
           <div>
             <label
-              htmlFor="fax-destination-number"
+              htmlFor="fax-destination-address"
               className="text-xs font-semibold uppercase text-[#999999]"
             >
-              Destination number
+              Destination address
             </label>
 
             <input
-              id="fax-destination-number"
-              type="tel"
-              value={destinationNumber}
+              id="fax-destination-address"
+              type="text"
+              value={destinationAddress}
               onChange={(event) =>
-                setDestinationNumber(event.target.value)
+                setDestinationAddress(event.target.value)
               }
-              placeholder="Enter a fax number"
+              placeholder={`e.g. 4698006351@${WESTFAX_EMAIL_DOMAIN}`}
+              className="mt-1 w-full rounded-md border border-[#e4ddd0] px-3 py-2 text-sm text-[#2d2d2d] outline-none focus:border-[#8b6f47]"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="fax-subject"
+              className="text-xs font-semibold uppercase text-[#999999]"
+            >
+              Subject
+            </label>
+
+            <input
+              id="fax-subject"
+              type="text"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              placeholder="Subject"
               className="mt-1 w-full rounded-md border border-[#e4ddd0] px-3 py-2 text-sm text-[#2d2d2d] outline-none focus:border-[#8b6f47]"
             />
           </div>
@@ -152,7 +209,7 @@ export function SendFaxDialog({
             onClick={handleSend}
             disabled={
               sendFaxMutation.isPending ||
-              !destinationNumber.trim() ||
+              !destinationAddress.trim() ||
               !hasAttachment
             }
             className="rounded-md bg-[#8b6f47] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6f5636] disabled:pointer-events-none disabled:opacity-50"

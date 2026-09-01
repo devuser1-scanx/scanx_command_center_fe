@@ -105,13 +105,13 @@ export type FaxTransmissionItem = {
   id: number;
   fileName: string;
   status: string;
-  westfaxJobId: string | null;
+  emailMessageId: string | null;
   errorMessage: string | null;
 };
 
 export type SendFaxResult = {
   destinationNumber: string;
-  westfaxJobId: string | null;
+  emailMessageId: string | null;
   transmissions: FaxTransmissionItem[];
   createdAt: string;
 };
@@ -271,13 +271,13 @@ type ApiFaxTransmissionItem = {
   id: number;
   file_name: string;
   status: string;
-  westfax_job_id: string | null;
+  email_message_id: string | null;
   error_message: string | null;
 };
 
 type ApiSendFaxResponse = {
   destination_number: string;
-  westfax_job_id: string | null;
+  email_message_id: string | null;
   transmissions: ApiFaxTransmissionItem[];
   created_at: string;
 };
@@ -479,7 +479,7 @@ function mapFaxTransmission(
     id: item.id,
     fileName: item.file_name,
     status: item.status,
-    westfaxJobId: item.westfax_job_id,
+    emailMessageId: item.email_message_id,
     errorMessage: item.error_message,
   };
 }
@@ -488,6 +488,7 @@ export async function sendFax(
   appointmentId: string,
   input: {
     destinationNumber: string;
+    subject: string;
     includeReport: boolean;
     files: File[];
   },
@@ -495,6 +496,11 @@ export async function sendFax(
   const formData = new FormData();
 
   formData.append("destination_number", input.destinationNumber);
+
+  if (input.subject) {
+    formData.append("subject", input.subject);
+  }
+
   formData.append("include_report", String(input.includeReport));
 
   for (const file of input.files) {
@@ -508,7 +514,7 @@ export async function sendFax(
 
   return {
     destinationNumber: response.destination_number,
-    westfaxJobId: response.westfax_job_id,
+    emailMessageId: response.email_message_id,
     transmissions: response.transmissions.map(mapFaxTransmission),
     createdAt: response.created_at,
   };

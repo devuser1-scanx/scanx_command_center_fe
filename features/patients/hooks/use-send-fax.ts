@@ -11,6 +11,7 @@ import { normalizeApiError } from "@/lib/api/api-error";
 
 type SendFaxInput = {
   destinationNumber: string;
+  subject: string;
   includeReport: boolean;
   files: File[];
 };

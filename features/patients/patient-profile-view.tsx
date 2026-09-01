@@ -584,6 +584,8 @@ export function PatientProfileView({
         onOpenChange={setIsFaxDialogOpen}
         appointmentId={profile.selectedAppointmentId}
         physicianFaxNo={profile.intake?.physicianFaxNo ?? null}
+        patientName={profile.patient}
+        examType={selectedVisit?.exam ?? null}
       />
 
       <SendMailDialog
