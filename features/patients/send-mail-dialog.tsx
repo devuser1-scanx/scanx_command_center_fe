@@ -71,12 +71,6 @@ function buildMailSubject(patientName: string, dob: string | null): string {
     : `${namePart} Ultrasound Report`;
 }
 
-// Must match SCANX_LOGO_CONTENT_ID in app/integrations/gmail_client.py -
-// the backend always attaches the actual logo bytes as an inline
-// Content-ID image under this same id, regardless of what's in the body,
-// so this <img> tag resolves to the real ScanX animated logo once sent.
-const SCANX_LOGO_CONTENT_ID = "scanx-logo";
-
 function buildMailBodyHtml(
   patientName: string,
   dob: string | null,
@@ -95,7 +89,6 @@ Examination: ${escapeHtml((examType ?? "").trim())}
 </p>
 <p>Please feel free to reach out if there are any questions.</p>
 <p>Regards,<br><strong>ScanX Support Team</strong></p>
-<p><img src="cid:${SCANX_LOGO_CONTENT_ID}" alt="ScanX" width="165" height="60" /></p>
 <p>
 <a href="https://www.scanx.care">www.scanx.care</a><br>
 Clinic Ph: (469) 804-6999<br>
