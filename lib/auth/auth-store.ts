@@ -13,11 +13,6 @@ type SetSessionPayload = {
   tokens: LoginResponse;
 };
 
-type UpdateTokensPayload = {
-  accessToken: string;
-  refreshToken?: string | null;
-};
-
 type AuthStore = {
   /**
    * Currently authenticated user.
@@ -25,13 +20,13 @@ type AuthStore = {
   user: AuthUser | null;
 
   /**
-   * Tokens are also reflected in the store so React components can react
-   * to authentication changes.
+   * Also reflected in the store so React components can react to
+   * authentication changes.
    *
-   * The access token remains memory-only.
+   * Memory-only, same as tokenManager - the refresh token never enters
+   * JS at all, so there's nothing to mirror here for it.
    */
   accessToken: string | null;
-  refreshToken: string | null;
 
   /**
    * True after a valid user session has been loaded.
@@ -45,7 +40,7 @@ type AuthStore = {
   isInitialized: boolean;
 
   /**
-   * Store the user and tokens after a successful login.
+   * Store the user and access token after a successful login.
    */
   setSession: (payload: SetSessionPayload) => void;
 
@@ -55,9 +50,9 @@ type AuthStore = {
   setUser: (user: AuthUser | null) => void;
 
   /**
-   * Replace tokens after a successful refresh request.
+   * Replace the access token after a successful refresh request.
    */
-  updateTokens: (payload: UpdateTokensPayload) => void;
+  updateAccessToken: (accessToken: string) => void;
 
   /**
    * Mark authentication initialization as complete.
@@ -73,20 +68,17 @@ type AuthStore = {
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   accessToken: null,
-  refreshToken: null,
   isAuthenticated: false,
   isInitialized: false,
 
   setSession: ({ user, tokens }) => {
     tokenManager.setTokens({
       accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
     });
 
     set({
       user,
       accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
       isAuthenticated: true,
       isInitialized: true,
     });
@@ -99,21 +91,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
     });
   },
 
-  updateTokens: ({
-    accessToken,
-    refreshToken,
-  }) => {
-    tokenManager.setTokens({
-      accessToken,
-      refreshToken,
-    });
+  updateAccessToken: (accessToken) => {
+    tokenManager.setTokens({ accessToken });
 
     set((state) => ({
       accessToken,
-      refreshToken:
-        refreshToken !== undefined
-          ? refreshToken
-          : state.refreshToken,
       isAuthenticated: Boolean(state.user),
     }));
   },
@@ -130,7 +112,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({
       user: null,
       accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
       isInitialized: true,
     });

@@ -52,12 +52,13 @@ export function useLogin() {
         const tokens = await login(credentials);
 
         /**
-         * Store tokens before requesting /auth/me because that request
-         * requires the access token in its Authorization header.
+         * Store the access token before requesting /auth/me because
+         * that request requires it in its Authorization header. The
+         * refresh token was already set as an HttpOnly cookie by the
+         * backend's response - it never passes through this code.
          */
         tokenManager.setTokens({
           accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
         });
 
         /**

@@ -110,8 +110,6 @@ export function normalizeAuthUser(
       : "inactive",
 
     is_active: response.is_active,
-    is_email_verified:
-      response.is_email_verified,
 
     must_change_password:
       response.must_change_password,

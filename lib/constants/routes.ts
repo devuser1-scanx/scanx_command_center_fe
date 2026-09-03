@@ -12,17 +12,27 @@ export const AUTHENTICATED_ROUTES = {
   changePassword: "/change-password",
 } as const;
 
+/**
+ * Pages shared by every role in the main operational workspace (admin
+ * and front_desk today) - no /admin prefix, since these aren't
+ * admin-only. See app/(dashboard)/(workspace)/layout.tsx.
+ */
+export const WORKSPACE_ROUTES = {
+  dashboard: "/dashboard",
+  patients: "/patients",
+  reports: "/reports",
+} as const;
+
+/**
+ * The true Administration section - admin only. See
+ * app/(dashboard)/(workspace)/admin/layout.tsx.
+ */
 export const ADMIN_ROUTES = {
-  dashboard: "/admin/dashboard",
   users: "/admin/users",
   createUser: "/admin/users/create",
   roles: "/admin/roles",
   clinics: "/admin/clinics",
   auditLogs: "/admin/audit-logs",
-} as const;
-
-export const FRONT_DESK_ROUTES = {
-  dashboard: "/front-desk/dashboard",
 } as const;
 
 export const SONOGRAPHER_ROUTES = {

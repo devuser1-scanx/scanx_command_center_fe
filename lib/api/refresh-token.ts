@@ -5,6 +5,7 @@ import type {
 } from "@/features/auth/types/auth-types";
 import { env } from "@/lib/env";
 import { tokenManager } from "@/lib/auth/token-manager";
+import { getCsrfToken } from "@/lib/auth/csrf";
 import {
   ApiError,
   getApiErrorMessage,
@@ -49,21 +50,14 @@ async function parseErrorResponse(
 }
 
 /**
- * Calls POST /auth/refresh and saves the newly issued tokens.
+ * Calls POST /auth/refresh and saves the newly issued access token.
+ *
+ * The refresh token itself is never read or sent here - it lives only
+ * in an HttpOnly cookie the browser attaches automatically. The
+ * X-CSRF-Token header is the double-submit counterpart to that cookie
+ * (see lib/auth/csrf.ts).
  */
 async function performRefresh(): Promise<RefreshTokenResponse> {
-  const refreshToken =
-    tokenManager.getRefreshToken();
-
-  if (!refreshToken) {
-    throw new ApiError({
-      message:
-        "Your session has expired. Please sign in again.",
-      status: 401,
-      code: "REFRESH_TOKEN_MISSING",
-    });
-  }
-
   let response: Response;
 
   try {
@@ -73,19 +67,15 @@ async function performRefresh(): Promise<RefreshTokenResponse> {
         method: "POST",
 
         headers: {
-          "Content-Type": "application/json",
           Accept: "application/json",
+          "X-CSRF-Token": getCsrfToken() ?? "",
         },
 
         /**
-         * This supports the future production setup where the refresh
-         * token is stored in an HttpOnly cookie.
+         * Required so the browser sends the HttpOnly refresh-token
+         * cookie (and the readable CSRF cookie) to the API's origin.
          */
         credentials: "include",
-
-        body: JSON.stringify({
-          refresh_token: refreshToken,
-        }),
       },
     );
   } catch (error) {
@@ -147,15 +137,6 @@ async function performRefresh(): Promise<RefreshTokenResponse> {
 
   tokenManager.setTokens({
     accessToken: tokens.access_token,
-
-    /**
-     * Some backends rotate the refresh token while others return only
-     * a new access token.
-     */
-    refreshToken:
-      tokens.refresh_token !== undefined
-        ? tokens.refresh_token
-        : undefined,
   });
 
   return tokens;

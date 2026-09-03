@@ -20,7 +20,10 @@ export const CURRENT_USER_QUERY_KEY = [
  * This hook can:
  *
  * - Use an existing access token
- * - Refresh the access token after a page reload
+ * - Refresh the access token after a page reload, via the HttpOnly
+ *   refresh-token cookie the browser sends automatically - there is no
+ *   client-side signal for whether that cookie exists, so this always
+ *   attempts it once and lets a 401 mean "no session"
  * - Request GET /auth/me
  * - Restore the Zustand authentication state
  */
@@ -29,8 +32,8 @@ export function useCurrentUser() {
     (state) => state.setUser,
   );
 
-  const updateTokens = useAuthStore(
-    (state) => state.updateTokens,
+  const updateAccessToken = useAuthStore(
+    (state) => state.updateAccessToken,
   );
 
   const setInitialized = useAuthStore(
@@ -51,29 +54,13 @@ export function useCurrentUser() {
 
         /**
          * After a full page refresh, the access token is gone because it
-         * only exists in memory.
-         *
-         * When a refresh token exists, request a new access token before
-         * calling /auth/me.
+         * only exists in memory. Attempt a refresh before calling
+         * /auth/me - it succeeds if the refresh-token cookie is present
+         * and valid, and fails (401) otherwise.
          */
-        if (
-          !accessToken &&
-          tokenManager.hasRefreshToken()
-        ) {
-          accessToken =
-            await refreshAccessToken();
-
-          updateTokens({
-            accessToken,
-            refreshToken:
-              tokenManager.getRefreshToken(),
-          });
-        }
-
         if (!accessToken) {
-          throw new Error(
-            "No active authentication session.",
-          );
+          accessToken = await refreshAccessToken();
+          updateAccessToken(accessToken);
         }
 
         return await getCurrentUser();
@@ -86,14 +73,11 @@ export function useCurrentUser() {
     },
 
     /**
-     * Only run the query when at least one authentication token exists.
-     *
-     * Without this condition, the public login page would immediately
-     * call /auth/me and receive an unnecessary 401 response.
+     * Always attempt once on mount. There's no client-readable signal
+     * for whether a session cookie exists (it's HttpOnly by design), so
+     * the query itself - not a pre-check - is what determines this.
      */
-    enabled:
-      tokenManager.hasAccessToken() ||
-      tokenManager.hasRefreshToken(),
+    enabled: true,
 
     /**
      * Authentication state should not be considered generally cacheable

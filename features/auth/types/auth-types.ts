@@ -32,7 +32,6 @@ export type CurrentUserResponse = {
   last_name: string;
   phone?: string | null;
   is_active: boolean;
-  is_email_verified?: boolean;
   must_change_password: boolean;
   last_login_at?: string | null;
   roles: BackendRole[];
@@ -47,7 +46,6 @@ export type LoginRequest = {
 
 export type LoginResponse = {
   access_token: string;
-  refresh_token: string;
   token_type: string;
   expires_in?: number;
 };
@@ -73,7 +71,6 @@ export type AuthUser = {
   permissions: Permission[];
   status: UserStatus;
   is_active: boolean;
-  is_email_verified?: boolean;
   must_change_password: boolean;
   last_login_at?: string | null;
 
@@ -85,13 +82,8 @@ export type AuthUser = {
   updated_at?: string;
 };
 
-export type RefreshTokenRequest = {
-  refresh_token: string;
-};
-
 export type RefreshTokenResponse = {
   access_token: string;
-  refresh_token?: string;
   token_type: string;
   expires_in?: number;
 };
@@ -120,7 +112,6 @@ export type MessageResponse = {
 export type AuthState = {
   user: AuthUser | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
 };

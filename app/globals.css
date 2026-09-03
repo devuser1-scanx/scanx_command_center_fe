@@ -1,13 +1,63 @@
 @import "tailwindcss";
 
+/**
+ * This app is a fixed light/cream theme throughout (see the admin pages'
+ * hardcoded #2d2d2d / #777777 / #e4ddd0 / #8b6f47 palette) - it has no
+ * dark-mode design anywhere. These tokens exist only so that shadcn-style
+ * utility classes (text-muted-foreground, bg-primary, the Button
+ * component's variants, etc.) resolve to real, visible colors instead of
+ * silently doing nothing. There is deliberately no
+ * `@media (prefers-color-scheme: dark)` override: a previous version of
+ * this file flipped --foreground to near-white under OS dark mode while
+ * every actual page kept its fixed light/cream background, making any
+ * text relying on these tokens (including the shared Button component's
+ * default/outline variants) nearly invisible.
+ */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #2d2d2d;
+
+  --card: #ffffff;
+  --card-foreground: #2d2d2d;
+
+  --muted: #f5f1e8;
+  --muted-foreground: #777777;
+
+  --primary: #8b6f47;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f5f1e8;
+  --secondary-foreground: #2d2d2d;
+
+  --destructive: #cc3333;
+
+  --border: #e4ddd0;
+  --input: #dddddd;
+  --ring: #8b6f47;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
@@ -18,13 +68,6 @@
   --breakpoint-3xl: 1920px;
   --breakpoint-4xl: 2560px;
   --breakpoint-5xl: 3840px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

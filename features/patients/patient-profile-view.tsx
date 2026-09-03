@@ -130,7 +130,7 @@ export function PatientProfileView({
         </p>
 
         <Link
-          href="/admin/patients"
+          href="/patients"
           className="mt-3 inline-block text-sm font-semibold text-[#8b6f47] hover:underline"
         >
           Back to Patients
@@ -249,7 +249,7 @@ export function PatientProfileView({
               return (
                 <Link
                   key={visit.appointmentId}
-                  href={`/admin/patients/${encodeURIComponent(visit.appointmentId)}`}
+                  href={`/patients/${encodeURIComponent(visit.appointmentId)}`}
                   className={cn(
                     "block rounded-xl border p-3 transition",
                     isSelected

@@ -119,7 +119,7 @@ export function ClinicTimelineRow({
         return (
           <Link
             key={appointment.id}
-            href={`/admin/patients/${encodeURIComponent(appointment.id)}`}
+            href={`/patients/${encodeURIComponent(appointment.id)}`}
             className={cn(
               "absolute block overflow-hidden rounded-xl border shadow-md transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg",
               isCheckedIn

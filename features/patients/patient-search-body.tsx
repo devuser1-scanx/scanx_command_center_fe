@@ -31,14 +31,14 @@ export function PatientSearchBody({
 
     router.push(
       trimmed
-        ? `/admin/patients?q=${encodeURIComponent(trimmed)}`
-        : "/admin/patients",
+        ? `/patients?q=${encodeURIComponent(trimmed)}`
+        : "/patients",
     );
   }
 
   function handleClear() {
     setInputValue("");
-    router.push("/admin/patients");
+    router.push("/patients");
   }
 
   return (
@@ -121,7 +121,7 @@ export function PatientSearchBody({
                   patient.phone ??
                   patient.latestAppointmentId
                 }
-                href={`/admin/patients/${encodeURIComponent(patient.latestAppointmentId)}`}
+                href={`/patients/${encodeURIComponent(patient.latestAppointmentId)}`}
                 className="-mx-2 flex flex-wrap items-center justify-between gap-3 rounded-lg px-2 py-4 transition hover:bg-[#fbfaf7]"
               >
                 <div className="min-w-0">

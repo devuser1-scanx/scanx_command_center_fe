@@ -33,7 +33,7 @@ export function AdminDashboardShell({
     }
 
     router.push(
-      `/admin/patients?q=${encodeURIComponent(trimmed)}`,
+      `/patients?q=${encodeURIComponent(trimmed)}`,
     );
   }
 
@@ -44,6 +44,15 @@ export function AdminDashboardShell({
       .join(" ") ||
     user?.email ||
     "Admin";
+
+  const roleLabels: Record<string, string> = {
+    admin: "Admin",
+    front_desk: "Front Desk",
+    sonographer: "Sonographer",
+    sales: "Sales",
+  };
+
+  const roleLabel = user ? (roleLabels[user.role] ?? user.role) : "Admin";
 
   return (
     <div className="flex min-h-screen bg-[#f5f1e8]">
@@ -101,7 +110,7 @@ export function AdminDashboardShell({
                 </p>
 
                 <p className="text-xs text-[#777777]">
-                  Admin
+                  {roleLabel}
                 </p>
               </div>
 

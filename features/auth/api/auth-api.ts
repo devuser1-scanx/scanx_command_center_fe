@@ -14,7 +14,7 @@ import type {
 import { normalizeAuthUser } from "@/features/auth/utils/normalize-auth-user";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
-import { tokenManager } from "@/lib/auth/token-manager";
+import { getCsrfToken } from "@/lib/auth/csrf";
 
 /**
  * Log in with email and password.
@@ -52,25 +52,19 @@ export async function getCurrentUser(): Promise<AuthUser> {
 /**
  * Log out the current session.
  *
- * The backend may require either:
- * - only the access token, or
- * - the refresh token in the request body
- *
- * The current implementation sends the refresh token when available.
+ * The refresh token itself travels only as an HttpOnly cookie, sent
+ * automatically by the browser. The X-CSRF-Token header is the
+ * double-submit counterpart the backend requires alongside it.
  */
 export async function logout(): Promise<MessageResponse | void> {
-  const refreshToken =
-    tokenManager.getRefreshToken();
-
   return apiClient.post<MessageResponse | void>(
     API_ENDPOINTS.auth.logout,
-    refreshToken
-      ? {
-          refresh_token: refreshToken,
-        }
-      : undefined,
+    undefined,
     {
       authenticated: true,
+      headers: {
+        "X-CSRF-Token": getCsrfToken() ?? "",
+      },
 
       /**
        * Logout should not start a token refresh loop when the session

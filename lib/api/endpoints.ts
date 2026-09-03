@@ -92,6 +92,16 @@ export const API_ENDPOINTS = {
       `/patients/${encodeURIComponent(patientId)}/sms/prefill`,
   },
 
+  reports: {
+    groups: "/reports/groups",
+
+    groupFiles: (groupId: string) =>
+      `/reports/groups/${encodeURIComponent(groupId)}/files`,
+
+    fileContent: (groupId: string, fileId: string, mode: "inline" | "attachment") =>
+      `/reports/groups/${encodeURIComponent(groupId)}/files/${encodeURIComponent(fileId)}/content?mode=${mode}`,
+  },
+
   dashboard: {
     summary: "/dashboard/summary",
     timeline: "/dashboard/timeline",

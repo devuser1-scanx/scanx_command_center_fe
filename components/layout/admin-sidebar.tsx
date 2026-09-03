@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { SCANX_LOGO_BASE64 } from "@/lib/constants/branding";
+import { useAuthStore } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 
 type AdminNavItem = {
@@ -34,37 +35,37 @@ type AdminNavItem = {
 const mainNavItems: AdminNavItem[] = [
   {
     label: "Dashboard",
-    href: "/admin/dashboard",
+    href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
     label: "Patients",
-    href: "/admin/patients",
+    href: "/patients",
     icon: Search,
   },
   {
     label: "Appointments",
-    href: "/admin/appointments",
+    href: "/appointments",
     icon: ClipboardList,
   },
   {
     label: "Messages",
-    href: "/admin/messages",
+    href: "/messages",
     icon: MessageSquare,
   },
   {
     label: "Calls",
-    href: "/admin/calls",
+    href: "/calls",
     icon: Phone,
   },
   {
     label: "Reports",
-    href: "/admin/reports",
+    href: "/reports",
     icon: FileText,
   },
   {
     label: "Cases & Tasks",
-    href: "/admin/cases",
+    href: "/cases",
     icon: Activity,
   },
 ];
@@ -127,6 +128,9 @@ function SidebarLink({
 }
 
 export function AdminSidebar() {
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.role === "admin";
+
   const logoSource = SCANX_LOGO_BASE64
     ? SCANX_LOGO_BASE64.startsWith("data:image/")
       ? SCANX_LOGO_BASE64
@@ -169,30 +173,34 @@ export function AdminSidebar() {
           </nav>
         </div>
 
-        <div className="mt-8">
-          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-[#b9b2a8]">
-            Administration
-          </p>
+        {isAdmin && (
+          <div className="mt-8">
+            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-[#b9b2a8]">
+              Administration
+            </p>
 
-          <nav className="space-y-1">
-            {adminNavItems.map((item) => (
-              <SidebarLink
-                key={item.href}
-                item={item}
-              />
-            ))}
-          </nav>
-        </div>
+            <nav className="space-y-1">
+              {adminNavItems.map((item) => (
+                <SidebarLink
+                  key={item.href}
+                  item={item}
+                />
+              ))}
+            </nav>
+          </div>
+        )}
 
-        <div className="mt-auto border-t border-white/10 pt-4">
-          <SidebarLink
-            item={{
-              label: "Settings",
-              href: "/admin/settings",
-              icon: Settings,
-            }}
-          />
-        </div>
+        {isAdmin && (
+          <div className="mt-auto border-t border-white/10 pt-4">
+            <SidebarLink
+              item={{
+                label: "Settings",
+                href: "/admin/settings",
+                icon: Settings,
+              }}
+            />
+          </div>
+        )}
       </div>
     </aside>
   );

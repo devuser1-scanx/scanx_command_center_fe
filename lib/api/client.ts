@@ -243,12 +243,17 @@ async function executeRequest<T>(
     });
   }
 
+  /**
+   * There's no client-readable signal for whether a refresh-token
+   * cookie exists (it's HttpOnly by design) - so this always attempts
+   * the refresh once on a 401 and lets that call fail naturally (its
+   * own 401) when there's no session to restore.
+   */
   const shouldRefresh =
     response.status === 401 &&
     authenticated &&
     retryOnUnauthorized &&
-    !hasRetried &&
-    tokenManager.hasRefreshToken();
+    !hasRetried;
 
   if (shouldRefresh) {
     try {
@@ -313,6 +318,76 @@ export async function apiRequest<T>(
     endpoint,
     options,
   );
+}
+
+/**
+ * Fetches a binary response (e.g. a PDF) as a Blob.
+ *
+ * Bypasses parseSuccessResponse (which assumes JSON/text), but still
+ * attaches the bearer token and retries once on a 401 exactly like
+ * executeRequest does for JSON requests.
+ */
+export async function apiRequestBlob(
+  endpoint: string,
+  options: Omit<ApiRequestOptions, "method" | "body"> = {},
+  hasRetried = false,
+): Promise<Blob> {
+  const headers = createHeaders(options);
+
+  let response: Response;
+
+  try {
+    response = await fetch(buildUrl(endpoint), {
+      ...options,
+      method: "GET",
+      headers,
+      credentials: options.credentials ?? "include",
+    });
+  } catch (error) {
+    throw new ApiError({
+      message:
+        "Unable to connect to the server. Check your internet connection.",
+      code: "NETWORK_ERROR",
+      cause: error,
+    });
+  }
+
+  if (
+    response.status === 401 &&
+    !hasRetried
+  ) {
+    try {
+      await refreshAccessToken();
+      return await apiRequestBlob(endpoint, options, true);
+    } catch (error) {
+      await clearAuthenticationState();
+
+      throw new ApiError({
+        message:
+          "Your session has expired. Please sign in again.",
+        status: 401,
+        code: "SESSION_EXPIRED",
+        cause: error,
+      });
+    }
+  }
+
+  if (!response.ok) {
+    const payload = await parseErrorPayload(response);
+
+    throw new ApiError({
+      message: getApiErrorMessage(
+        payload,
+        response.statusText ||
+          "The request could not be completed.",
+      ),
+      status: response.status,
+      code: payload?.code,
+      details: payload,
+    });
+  }
+
+  return response.blob();
 }
 
 export const apiClient = {

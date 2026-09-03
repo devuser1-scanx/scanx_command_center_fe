@@ -6,7 +6,6 @@ import { useEffect, type ReactNode } from "react";
 
 import { useCurrentUser } from "@/features/auth/hooks/use-current-user";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { tokenManager } from "@/lib/auth/token-manager";
 
 type AuthInitializerProps = {
   children: ReactNode;
@@ -37,22 +36,11 @@ export function AuthInitializer({
     }
 
     if (currentUserQuery.isError) {
+      /**
+       * No session cookie, or an expired/invalid one - either way there
+       * is nothing to restore.
+       */
       clearAuth();
-      return;
-    }
-
-    /**
-     * No tokens means there is no session to restore.
-     *
-     * Mark initialization complete immediately so public pages such as
-     * /login are not kept in a loading state.
-     */
-    const hasSessionToken =
-      tokenManager.hasAccessToken() ||
-      tokenManager.hasRefreshToken();
-
-    if (!hasSessionToken) {
-      setInitialized(true);
     }
   }, [
     currentUserQuery.data,

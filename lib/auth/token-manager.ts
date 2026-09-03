@@ -1,29 +1,15 @@
 // lib/auth/token-manager.ts
 
-const REFRESH_TOKEN_STORAGE_KEY =
-  "scanx_command_center_refresh_token";
-
 /**
  * Access tokens are kept only in JavaScript memory.
  *
  * This means the token is removed whenever the page is fully refreshed.
- * The refresh token can then be used to request a new access token.
+ * A fresh access token is then obtained via POST /auth/refresh, which
+ * relies on the HttpOnly refresh-token cookie the browser sends
+ * automatically - the refresh token itself never exists in JS at all,
+ * not even transiently.
  */
 let accessToken: string | null = null;
-
-/**
- * Refresh token is temporarily stored in sessionStorage because the
- * current backend returns it in the JSON response.
- *
- * Production recommendation:
- * Move the refresh token to a Secure, HttpOnly cookie managed by the
- * backend. At that point, the frontend should not read or store it.
- */
-let inMemoryRefreshToken: string | null = null;
-
-function isBrowser(): boolean {
-  return typeof window !== "undefined";
-}
 
 export const tokenManager = {
   /**
@@ -41,83 +27,22 @@ export const tokenManager = {
   },
 
   /**
-   * Save the refresh token in memory and sessionStorage.
+   * Save the access token after login or token refresh.
    */
-  setRefreshToken(token: string | null): void {
-    inMemoryRefreshToken = token;
-
-    if (!isBrowser()) {
-      return;
-    }
-
-    if (token) {
-      window.sessionStorage.setItem(
-        REFRESH_TOKEN_STORAGE_KEY,
-        token,
-      );
-      return;
-    }
-
-    window.sessionStorage.removeItem(
-      REFRESH_TOKEN_STORAGE_KEY,
-    );
-  },
-
-  /**
-   * Read the refresh token.
-   *
-   * Memory is checked first. If the page was refreshed, sessionStorage
-   * is checked so the application can restore the session.
-   */
-  getRefreshToken(): string | null {
-    if (inMemoryRefreshToken) {
-      return inMemoryRefreshToken;
-    }
-
-    if (!isBrowser()) {
-      return null;
-    }
-
-    const storedToken = window.sessionStorage.getItem(
-      REFRESH_TOKEN_STORAGE_KEY,
-    );
-
-    inMemoryRefreshToken = storedToken;
-
-    return storedToken;
-  },
-
-  /**
-   * Save both tokens after login or token refresh.
-   */
-  setTokens(tokens: {
-    accessToken: string;
-    refreshToken?: string | null;
-  }): void {
+  setTokens(tokens: { accessToken: string }): void {
     accessToken = tokens.accessToken;
-
-    if (tokens.refreshToken !== undefined) {
-      this.setRefreshToken(tokens.refreshToken);
-    }
   },
 
   /**
-   * Remove all authentication tokens.
+   * Remove the in-memory access token.
    *
-   * This should run during logout, refresh-token failure, and session
-   * expiration.
+   * This should run during logout, refresh failure, and session
+   * expiration. The refresh-token cookie itself is cleared by the
+   * backend's Set-Cookie response on POST /auth/logout (or simply
+   * expires/gets rejected server-side if that call is never made).
    */
   clearTokens(): void {
     accessToken = null;
-    inMemoryRefreshToken = null;
-
-    if (!isBrowser()) {
-      return;
-    }
-
-    window.sessionStorage.removeItem(
-      REFRESH_TOKEN_STORAGE_KEY,
-    );
   },
 
   /**
@@ -125,12 +50,5 @@ export const tokenManager = {
    */
   hasAccessToken(): boolean {
     return Boolean(accessToken);
-  },
-
-  /**
-   * Check whether a refresh token currently exists.
-   */
-  hasRefreshToken(): boolean {
-    return Boolean(this.getRefreshToken());
   },
 };
