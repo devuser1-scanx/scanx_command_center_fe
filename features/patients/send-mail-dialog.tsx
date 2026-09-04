@@ -67,8 +67,8 @@ function buildMailSubject(patientName: string, dob: string | null): string {
   const dobPart = (dob ?? "").trim();
 
   return dobPart
-    ? `${namePart} ${dobPart} Ultrasound Report`
-    : `${namePart} Ultrasound Report`;
+    ? `ScanX: ${namePart} ${dobPart} Ultrasound Report`
+    : `ScanX: ${namePart} Ultrasound Report`;
 }
 
 function buildMailBodyHtml(
