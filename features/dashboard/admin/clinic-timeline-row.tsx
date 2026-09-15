@@ -8,6 +8,7 @@ import Link from "next/link";
 import type { Clinic } from "@/features/dashboard/admin/api/dashboard-api";
 import { useDashboardTimeline } from "@/features/dashboard/admin/hooks/use-dashboard-timeline";
 import {
+  CHECKED_IN_ACCENT_HEX,
   computeAppointmentLayout,
   formatTime12Hour,
   getStatusClasses,
@@ -103,7 +104,11 @@ export function ClinicTimelineRow({
     >
       {layout.map(({ appointment, laneIndex }) => {
         const classes = getStatusClasses(appointment.tone);
-        const isCheckedIn = appointment.status === "Checked In";
+        // The "Paid" status color already communicates payment on its own;
+        // for every other paid appointment (Confirmed, Checked In, ...) show
+        // the small dollar marker instead.
+        const showPaidMarker =
+          appointment.paid && appointment.status !== "Paid";
 
         const leftPx =
           ((parseTimeToMinutes(appointment.time) -
@@ -121,10 +126,8 @@ export function ClinicTimelineRow({
             key={appointment.id}
             href={`/patients/${encodeURIComponent(appointment.id)}`}
             className={cn(
-              "absolute block overflow-hidden rounded-xl border shadow-md transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg",
-              isCheckedIn
-                ? "border-[#16a34a]/40 bg-[#e6f7ed]"
-                : "border-[#d9d1c4] bg-white",
+              "absolute block overflow-hidden rounded-xl shadow-md transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg",
+              classes.card,
             )}
             style={{
               left: leftPx + cardGapPx / 2,
@@ -133,41 +136,60 @@ export function ClinicTimelineRow({
               height: laneHeightPx - cardGapPx,
             }}
           >
-            <div className="flex h-full">
-              <div
-                className={cn("w-1.5 shrink-0 3xl:w-2", classes.bar)}
-              />
+            <div className="relative h-full min-w-0 overflow-hidden p-3 3xl:p-4">
+              <div className="flex items-start justify-between gap-2">
+                <h4
+                  className={cn(
+                    "truncate font-bold 3xl:text-base 5xl:text-lg",
+                    classes.text,
+                  )}
+                >
+                  {appointment.patient}
+                </h4>
 
-              <div className="min-w-0 flex-1 overflow-hidden p-3 3xl:p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="truncate font-bold text-[#2d2d2d] 3xl:text-base 5xl:text-lg">
-                    {appointment.patient}
-                  </h4>
-
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase 3xl:px-2.5 3xl:text-xs 5xl:text-sm",
-                      classes.badge,
-                    )}
-                  >
-                    {appointment.status}
-                  </span>
-                </div>
-
-                <p className="mt-2 truncate text-xs text-[#777777] 3xl:text-sm 5xl:text-base">
-                  <span className="font-bold text-[#2d2d2d]">
-                    Exam:
-                  </span>{" "}
-                  {appointment.exam}
-                </p>
-
-                <p className="truncate text-xs text-[#777777] 3xl:text-sm 5xl:text-base">
-                  <span className="font-bold text-[#2d2d2d]">
-                    Time:
-                  </span>{" "}
-                  {formatTime12Hour(appointment.time)}
-                </p>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase 3xl:px-2.5 3xl:text-xs 5xl:text-sm",
+                    classes.cardBadge,
+                  )}
+                >
+                  {appointment.status}
+                </span>
               </div>
+
+              <p
+                className={cn(
+                  "mt-2 truncate text-xs 3xl:text-sm 5xl:text-base",
+                  classes.mutedText,
+                )}
+              >
+                <span className={cn("font-bold", classes.text)}>
+                  Exam:
+                </span>{" "}
+                {appointment.exam}
+              </p>
+
+              <p
+                className={cn(
+                  "truncate text-xs 3xl:text-sm 5xl:text-base",
+                  classes.mutedText,
+                )}
+              >
+                <span className={cn("font-bold", classes.text)}>
+                  Time:
+                </span>{" "}
+                {formatTime12Hour(appointment.time)}
+              </p>
+
+              {showPaidMarker && (
+                <span
+                  className="absolute bottom-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-extrabold shadow 3xl:h-6 3xl:w-6 3xl:text-sm"
+                  style={{ color: CHECKED_IN_ACCENT_HEX }}
+                  title="Paid"
+                >
+                  $
+                </span>
+              )}
             </div>
           </Link>
         );

@@ -34,10 +34,12 @@ export function ActionMenuButton({
   label,
   className,
   options,
+  onSelect,
 }: {
   label: string;
   className: string;
   options: string[];
+  onSelect?: (option: string) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -54,7 +56,7 @@ export function ActionMenuButton({
           className,
         )}
         onFocus={() => setOpen(true)}
-        title="Not yet wired to a backend action"
+        title={onSelect ? undefined : "Not yet wired to a backend action"}
       >
         {label}
       </button>
@@ -70,8 +72,12 @@ export function ActionMenuButton({
             <button
               key={option}
               type="button"
+              onClick={() => {
+                setOpen(false);
+                onSelect?.(option);
+              }}
               className="block w-full px-4 py-10 text-left text-lg font-semibold text-[#2d2d2d] transition hover:bg-[#fbfaf7]"
-              title="Not yet wired to a backend action"
+              title={onSelect ? undefined : "Not yet wired to a backend action"}
             >
               {option}
             </button>

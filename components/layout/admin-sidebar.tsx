@@ -20,7 +20,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { SCANX_LOGO_BASE64 } from "@/lib/constants/branding";
+import { SCANX_LOGO_WHITE_BASE64 } from "@/lib/constants/branding";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,7 @@ type AdminNavItem = {
   icon: React.ComponentType<{
     className?: string;
   }>;
+  disabled?: boolean;
 };
 
 const mainNavItems: AdminNavItem[] = [
@@ -47,16 +48,19 @@ const mainNavItems: AdminNavItem[] = [
     label: "Appointments",
     href: "/appointments",
     icon: ClipboardList,
+    disabled: true,
   },
   {
     label: "Messages",
     href: "/messages",
     icon: MessageSquare,
+    disabled: true,
   },
   {
     label: "Calls",
     href: "/calls",
     icon: Phone,
+    disabled: true,
   },
   {
     label: "Reports",
@@ -67,6 +71,7 @@ const mainNavItems: AdminNavItem[] = [
     label: "Cases & Tasks",
     href: "/cases",
     icon: Activity,
+    disabled: true,
   },
 ];
 
@@ -111,6 +116,22 @@ function SidebarLink({
 
   const Icon = item.icon;
 
+  if (item.disabled) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Under development"
+        className="flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-[#6b6459] opacity-50"
+      >
+        <Icon className="size-4 shrink-0" />
+        <span className="flex-1">{item.label}</span>
+        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+          Soon
+        </span>
+      </div>
+    );
+  }
+
   return (
     <Link
       href={item.href}
@@ -131,21 +152,21 @@ export function AdminSidebar() {
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
 
-  const logoSource = SCANX_LOGO_BASE64
-    ? SCANX_LOGO_BASE64.startsWith("data:image/")
-      ? SCANX_LOGO_BASE64
-      : `data:image/png;base64,${SCANX_LOGO_BASE64}`
+  const logoSource = SCANX_LOGO_WHITE_BASE64
+    ? SCANX_LOGO_WHITE_BASE64.startsWith("data:image/")
+      ? SCANX_LOGO_WHITE_BASE64
+      : `data:image/png;base64,${SCANX_LOGO_WHITE_BASE64}`
     : null;
 
   return (
-    <aside className="hidden min-h-screen w-[260px] shrink-0 flex-col bg-[#111827] text-white lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col self-start bg-[#111827] text-white lg:flex">
       <div className="border-b border-white/10 px-5 py-5">
         <div className="flex items-center gap-3">
           {logoSource ? (
             <img
               src={logoSource}
               alt="ScanX"
-              className="h-10 w-auto max-w-[150px] object-contain"
+              className="h-15 w-auto max-w-[180px] object-contain"
             />
           ) : (
             <div className="text-2xl font-bold tracking-tight">

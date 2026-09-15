@@ -102,7 +102,7 @@ export type ForgotPasswordRequest = {
 export type ResetPasswordRequest = {
   token: string;
   new_password: string;
-  confirm_new_password?: string;
+  confirm_new_password: string;
 };
 
 export type MessageResponse = {

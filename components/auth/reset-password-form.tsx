@@ -56,6 +56,7 @@ export function ResetPasswordForm() {
       const response = await mutation.mutateAsync({
         token: values.token,
         new_password: values.new_password,
+        confirm_new_password: values.confirm_new_password,
       });
 
       toast.success(

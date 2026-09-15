@@ -13,16 +13,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useFaxReportLookup } from "@/features/patients/hooks/use-fax-report-lookup";
+import { useRescheduleLink } from "@/features/patients/hooks/use-reschedule-link";
 import { useSendMail } from "@/features/patients/hooks/use-send-mail";
 import {
   FileSlot,
   ReportAttachmentField,
 } from "@/features/patients/report-attachment-field";
 
+export type MailPurpose = "report" | "reschedule";
+
 type SendMailDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appointmentId: string;
+  purpose: MailPurpose;
   patientEmail: string | null;
   patientName: string;
   dob: string | null;
@@ -97,6 +101,36 @@ Clinic Fax: (469) 429-7432
 `.trim();
 }
 
+/** "ScanX: Reschedule Firstname Lastname's Appointment". */
+function buildRescheduleSubject(patientName: string): string {
+  const namePart = patientName.trim();
+
+  return namePart
+    ? `ScanX: Reschedule ${namePart}'s Appointment`
+    : "ScanX: Reschedule Your Appointment";
+}
+
+function buildRescheduleBodyHtml(
+  patientName: string,
+  rescheduleUrl: string | null,
+): string {
+  const { firstName } = splitPatientName(patientName);
+  const link = rescheduleUrl ?? "[reschedule link not available yet]";
+
+  return `
+<p>Hi ${escapeHtml(firstName) || "there"},</p>
+<p>You can reschedule your ScanX appointment using the link below.</p>
+<p><a href="${escapeHtml(link)}">${escapeHtml(link)}</a></p>
+<p>Please feel free to reach out if there are any questions.</p>
+<p>Regards,<br><strong>ScanX Support Team</strong></p>
+<p>
+<a href="https://www.scanx.care">www.scanx.care</a><br>
+Clinic Ph: (469) 804-6999<br>
+Clinic Fax: (469) 429-7432
+</p>
+`.trim();
+}
+
 function TextField({
   label,
   value,
@@ -131,6 +165,7 @@ export function SendMailDialog({
   open,
   onOpenChange,
   appointmentId,
+  purpose,
   patientEmail,
   patientName,
   dob,
@@ -140,7 +175,11 @@ export function SendMailDialog({
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
   const [subject, setSubject] = useState("");
-  const [bodyHtml, setBodyHtml] = useState("");
+  // null means "show the computed default" - for the reschedule purpose the
+  // link isn't known yet on first render, so the default is recomputed below
+  // from rescheduleLink.data on every render until the user actually edits
+  // the body (at which point bodyHtml becomes non-null and wins).
+  const [bodyHtml, setBodyHtml] = useState<string | null>(null);
   const [reportRemoved, setReportRemoved] = useState(false);
   const [lookupCancelled, setLookupCancelled] = useState(false);
   const [primaryUploadFile, setPrimaryUploadFile] = useState<File | null>(
@@ -149,7 +188,14 @@ export function SendMailDialog({
   const [secondaryUploadFile, setSecondaryUploadFile] =
     useState<File | null>(null);
 
-  const reportLookup = useFaxReportLookup(appointmentId, open);
+  const reportLookup = useFaxReportLookup(
+    appointmentId,
+    open && purpose === "report",
+  );
+  const rescheduleLink = useRescheduleLink(
+    appointmentId,
+    open && purpose === "reschedule",
+  );
   const sendMailMutation = useSendMail(appointmentId);
 
   /**
@@ -168,8 +214,12 @@ export function SendMailDialog({
       setTo(patientEmail ?? "");
       setCc("");
       setBcc("");
-      setSubject(buildMailSubject(patientName, dob));
-      setBodyHtml(buildMailBodyHtml(patientName, dob, examType));
+      setSubject(
+        purpose === "reschedule"
+          ? buildRescheduleSubject(patientName)
+          : buildMailSubject(patientName, dob),
+      );
+      setBodyHtml(null);
       setReportRemoved(false);
       setLookupCancelled(false);
       setPrimaryUploadFile(null);
@@ -178,7 +228,19 @@ export function SendMailDialog({
   }
 
   const reportFound = reportLookup.data?.found ?? false;
-  const showDetectedReport = reportFound && !reportRemoved && !lookupCancelled;
+  const showDetectedReport =
+    purpose === "report" && reportFound && !reportRemoved && !lookupCancelled;
+
+  const defaultBodyHtml =
+    purpose === "reschedule"
+      ? buildRescheduleBodyHtml(patientName, rescheduleLink.data?.url ?? null)
+      : buildMailBodyHtml(patientName, dob, examType);
+
+  const displayedBodyHtml = bodyHtml ?? defaultBodyHtml;
+
+  const rescheduleLinkUnavailable =
+    purpose === "reschedule" &&
+    (rescheduleLink.isPending || rescheduleLink.isError);
 
   function handleSend() {
     const files = [primaryUploadFile, secondaryUploadFile].filter(
@@ -191,7 +253,7 @@ export function SendMailDialog({
         cc,
         bcc,
         subject,
-        bodyHtml,
+        bodyHtml: displayedBodyHtml,
         includeReport: showDetectedReport,
         files,
       },
@@ -207,7 +269,9 @@ export function SendMailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Send email</DialogTitle>
+          <DialogTitle>
+            {purpose === "reschedule" ? "Email reschedule link" : "Send email"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -244,22 +308,36 @@ export function SendMailDialog({
 
             <div className="mt-1">
               <RichTextEditor
-                key={String(open)}
-                content={bodyHtml}
+                key={`${String(open)}-${rescheduleLink.data?.url ?? ""}`}
+                content={displayedBodyHtml}
                 onChange={setBodyHtml}
               />
             </div>
+
+            {purpose === "reschedule" && rescheduleLink.isPending && (
+              <div className="mt-1 text-xs text-[#999999]">
+                Generating a reschedule link…
+              </div>
+            )}
+
+            {purpose === "reschedule" && rescheduleLink.isError && (
+              <div className="mt-1 text-xs text-[#be123c]">
+                {rescheduleLink.error.message}
+              </div>
+            )}
           </div>
 
-          <ReportAttachmentField
-            reportLookup={reportLookup}
-            reportRemoved={reportRemoved}
-            onRemoveReport={() => setReportRemoved(true)}
-            lookupCancelled={lookupCancelled}
-            onCancelLookup={() => setLookupCancelled(true)}
-            primaryUploadFile={primaryUploadFile}
-            onChoosePrimaryUploadFile={setPrimaryUploadFile}
-          />
+          {purpose === "report" && (
+            <ReportAttachmentField
+              reportLookup={reportLookup}
+              reportRemoved={reportRemoved}
+              onRemoveReport={() => setReportRemoved(true)}
+              lookupCancelled={lookupCancelled}
+              onCancelLookup={() => setLookupCancelled(true)}
+              primaryUploadFile={primaryUploadFile}
+              onChoosePrimaryUploadFile={setPrimaryUploadFile}
+            />
+          )}
 
           <FileSlot
             label="Additional file (optional)"
@@ -282,7 +360,11 @@ export function SendMailDialog({
           <button
             type="button"
             onClick={handleSend}
-            disabled={sendMailMutation.isPending || !to.trim()}
+            disabled={
+              sendMailMutation.isPending ||
+              !to.trim() ||
+              rescheduleLinkUnavailable
+            }
             className="rounded-md bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] disabled:pointer-events-none disabled:opacity-50"
           >
             {sendMailMutation.isPending ? "Sending…" : "Send"}

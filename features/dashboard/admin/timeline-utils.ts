@@ -6,9 +6,13 @@ export type TimelineAppointment = {
   exam: string;
   time: string;
   status: string;
-  tone: "orange" | "blue" | "green" | "red" | "purple";
+  tone: "purple" | "green" | "pink" | "yellow" | "red" | "teal" | "blue";
+  paid: boolean;
   durationMinutes: number;
 };
+
+/** Fixed accent color for the paid+checked-in dollar-sign marker (matches the "Checked In" status color). */
+export const CHECKED_IN_ACCENT_HEX = "#04863B";
 
 export type AppointmentLayout = {
   appointment: TimelineAppointment;
@@ -35,39 +39,82 @@ export function formatTime12Hour(time: string): string {
   return `${hour12}:${minuteText.padStart(2, "0")} ${period}`;
 }
 
+/**
+ * Per-status color styling.
+ *  - `card`/`text`/`mutedText`/`cardBadge`: solid-fill timeline card (whole
+ *    card is the status color, so text/badge are picked for contrast against
+ *    it - dark colors get white text, the light "Completed"/"Confirmed"
+ *    colors get dark text).
+ *  - `badge`: the original light-tint/dark-text pill, for status labels
+ *    shown on a plain white background elsewhere (patient search results,
+ *    visit history) where a solid-color fill isn't appropriate.
+ */
 export function getStatusClasses(
   tone: TimelineAppointment["tone"],
 ) {
   switch (tone) {
-    case "green":
+    case "green": // Checked In
       return {
-        bar: "bg-[#16a34a]",
-        badge: "bg-[#e6f7ed] text-[#16803c]",
+        card: "bg-[#04863B]",
+        text: "text-white",
+        mutedText: "text-white/80",
+        cardBadge: "bg-white/20 text-white",
+        badge: "bg-[#E1F0E7] text-[#04863B]",
       };
 
-    case "red":
+    case "pink": // Completed
       return {
-        bar: "bg-[#dc2626]",
-        badge: "bg-[#ffeeee] text-[#cc3333]",
+        card: "bg-[#ED7087]",
+        text: "text-[#2d2d2d]",
+        mutedText: "text-[#2d2d2d]/70",
+        cardBadge: "bg-black/10 text-[#2d2d2d]",
+        badge: "bg-[#FDEEF1] text-[#B23955]",
       };
 
-    case "blue":
+    case "yellow": // Confirmed
       return {
-        bar: "bg-[#2563eb]",
-        badge: "bg-[#eaf1ff] text-[#2563eb]",
+        card: "bg-[#FFE767]",
+        text: "text-[#2d2d2d]",
+        mutedText: "text-[#2d2d2d]/70",
+        cardBadge: "bg-black/10 text-[#2d2d2d]",
+        badge: "bg-[#FFFCED] text-[#8A6D00]",
       };
 
-    case "purple":
+    case "red": // No Show
       return {
-        bar: "bg-[#7c3aed]",
-        badge: "bg-[#f1eaff] text-[#7c3aed]",
+        card: "bg-[#C60D0D]",
+        text: "text-white",
+        mutedText: "text-white/80",
+        cardBadge: "bg-white/20 text-white",
+        badge: "bg-[#F8E2E2] text-[#C60D0D]",
       };
 
-    case "orange":
+    case "teal": // Paid
+      return {
+        card: "bg-[#0D8A6A]",
+        text: "text-white",
+        mutedText: "text-white/80",
+        cardBadge: "bg-white/20 text-white",
+        badge: "bg-[#E2F1ED] text-[#0D8A6A]",
+      };
+
+    case "purple": // Cancelled
+      return {
+        card: "bg-[#8339B0]",
+        text: "text-white",
+        mutedText: "text-white/80",
+        cardBadge: "bg-white/20 text-white",
+        badge: "bg-[#F0E7F6] text-[#8339B0]",
+      };
+
+    case "blue": // Scheduled
     default:
       return {
-        bar: "bg-[#d97706]",
-        badge: "bg-[#fff2df] text-[#b45309]",
+        card: "bg-[#3B82C4]",
+        text: "text-white",
+        mutedText: "text-white/80",
+        cardBadge: "bg-white/20 text-white",
+        badge: "bg-[#E7F0F8] text-[#3B82C4]",
       };
   }
 }

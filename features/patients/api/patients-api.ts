@@ -139,6 +139,16 @@ export type SendMailResult = {
 export type SmsPrefillResult = {
   phone: string | null;
   directionsLink: string | null;
+  googleReviewLink: string | null;
+};
+
+export type ReportLinkResult = {
+  url: string;
+  expiresAt: string;
+};
+
+export type RescheduleLinkResult = {
+  url: string;
 };
 
 export type SendSmsResult = {
@@ -319,6 +329,7 @@ type ApiSendMailResponse = {
 type ApiSmsPrefillResponse = {
   phone: string | null;
   directions_link: string | null;
+  google_review_link: string | null;
 };
 
 type ApiSendSmsResponse = {
@@ -328,6 +339,15 @@ type ApiSendSmsResponse = {
   twilio_message_sid: string | null;
   error_message: string | null;
   created_at: string;
+};
+
+type ApiReportLinkResponse = {
+  url: string;
+  expires_at: string;
+};
+
+type ApiRescheduleLinkResponse = {
+  url: string;
 };
 
 function mapPatientSummary(item: ApiPatientSummary): PatientSummary {
@@ -628,6 +648,7 @@ export async function getSmsPrefill(
   return {
     phone: response.phone,
     directionsLink: response.directions_link,
+    googleReviewLink: response.google_review_link,
   };
 }
 
@@ -657,5 +678,30 @@ export async function sendSms(
     twilioMessageSid: response.twilio_message_sid,
     errorMessage: response.error_message,
     createdAt: response.created_at,
+  };
+}
+
+export async function getReportLink(
+  appointmentId: string,
+): Promise<ReportLinkResult> {
+  const response = await apiClient.post<ApiReportLinkResponse>(
+    API_ENDPOINTS.patients.reportLink(appointmentId),
+  );
+
+  return {
+    url: response.url,
+    expiresAt: response.expires_at,
+  };
+}
+
+export async function getRescheduleLink(
+  appointmentId: string,
+): Promise<RescheduleLinkResult> {
+  const response = await apiClient.post<ApiRescheduleLinkResponse>(
+    API_ENDPOINTS.patients.rescheduleLink(appointmentId),
+  );
+
+  return {
+    url: response.url,
   };
 }

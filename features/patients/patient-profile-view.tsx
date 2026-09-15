@@ -11,7 +11,10 @@ import {
 } from "@/features/patients/patient-action-buttons";
 import { usePatientProfile } from "@/features/patients/hooks/use-patient-profile";
 import { SendFaxDialog } from "@/features/patients/send-fax-dialog";
-import { SendMailDialog } from "@/features/patients/send-mail-dialog";
+import {
+  SendMailDialog,
+  type MailPurpose,
+} from "@/features/patients/send-mail-dialog";
 import {
   SendSmsDialog,
   type SmsPurpose,
@@ -94,6 +97,7 @@ export function PatientProfileView({
   const profileQuery = usePatientProfile(appointmentId);
   const [isFaxDialogOpen, setIsFaxDialogOpen] = useState(false);
   const [isMailDialogOpen, setIsMailDialogOpen] = useState(false);
+  const [mailPurpose, setMailPurpose] = useState<MailPurpose>("report");
   const [smsPurpose, setSmsPurpose] = useState<SmsPurpose | null>(null);
   const [visitsPage, setVisitsPage] = useState(1);
 
@@ -158,7 +162,7 @@ export function PatientProfileView({
   return (
     <div className="space-y-5">
       <Link
-        href="/admin/patients"
+        href="/patients"
         className="inline-flex items-center gap-1.5 text-sm font-bold text-[#8b6f47] hover:underline"
       >
         ← Back to Patients
@@ -175,7 +179,10 @@ export function PatientProfileView({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setIsMailDialogOpen(true)}
+              onClick={() => {
+                setMailPurpose("report");
+                setIsMailDialogOpen(true);
+              }}
               className="rounded-md bg-[#2563eb] px-20 py-4 text-xl font-semibold text-white transition hover:bg-[#1d4ed8]"
             >
               Mail
@@ -195,18 +202,33 @@ export function PatientProfileView({
           <ActionButton
             label="Waiting"
             className="bg-[#b45309] hover:bg-[#92400e]"
+            onClick={() => setSmsPurpose("waiting")}
           />
 
           <ActionMenuButton
             label="Reschedule Link"
             className="bg-[#7c3aed] hover:bg-[#6d28d9]"
             options={["Mail", "Text"]}
+            onSelect={(option) => {
+              if (option === "Text") {
+                setSmsPurpose("reschedule");
+              } else if (option === "Mail") {
+                setMailPurpose("reschedule");
+                setIsMailDialogOpen(true);
+              }
+            }}
           />
 
           <ActionButton
             label="Ask For Review"
             className="bg-[#16a34a] hover:bg-[#15803d]"
             onClick={() => setSmsPurpose("ask_for_review")}
+          />
+
+          <ActionButton
+            label="Payment Link"
+            className="bg-[#ca8a04] hover:bg-[#a16207]"
+            onClick={() => setSmsPurpose("payment_link")}
           />
 
           <ActionButton
@@ -229,6 +251,16 @@ export function PatientProfileView({
             label="Report"
             className="bg-[#be123c] hover:bg-[#9f1239]"
             options={["Text", "Email", "FAX"]}
+            onSelect={(option) => {
+              if (option === "Text") {
+                setSmsPurpose("report");
+              } else if (option === "Email") {
+                setMailPurpose("report");
+                setIsMailDialogOpen(true);
+              } else if (option === "FAX") {
+                setIsFaxDialogOpen(true);
+              }
+            }}
           />
         </div>
       </section>
@@ -599,6 +631,7 @@ export function PatientProfileView({
         open={isMailDialogOpen}
         onOpenChange={setIsMailDialogOpen}
         appointmentId={profile.selectedAppointmentId}
+        purpose={mailPurpose}
         patientEmail={profile.email}
         patientName={profile.patient}
         dob={profile.intake?.dob ?? null}
@@ -616,6 +649,8 @@ export function PatientProfileView({
         purpose={smsPurpose ?? "ask_for_review"}
         patientName={profile.patient}
         patientPhone={profile.phone}
+        paymentLink={profile.payment.paymentLink}
+        clinicName={selectedVisit?.clinicName ?? null}
       />
     </div>
   );

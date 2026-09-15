@@ -90,6 +90,12 @@ export const API_ENDPOINTS = {
 
     smsPrefill: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}/sms/prefill`,
+
+    reportLink: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/report-link`,
+
+    rescheduleLink: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/reschedule-link`,
   },
 
   reports: {

@@ -18,6 +18,7 @@ export type TimelineAppointmentApiResponse = {
   time: string;
   status: string;
   tone: TimelineAppointment["tone"];
+  paid: boolean;
   duration_minutes: number;
 };
 
@@ -55,6 +56,7 @@ export function mapTimelineAppointment(
     time: appointment.time,
     status: appointment.status,
     tone: appointment.tone,
+    paid: appointment.paid,
     durationMinutes: appointment.duration_minutes,
   };
 }
