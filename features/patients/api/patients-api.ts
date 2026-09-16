@@ -151,6 +151,18 @@ export type RescheduleLinkResult = {
   url: string;
 };
 
+export type PcpFormLinkResult = {
+  url: string;
+};
+
+export type ScrotalFormLinkResult = {
+  url: string;
+};
+
+export type TransvagFormLinkResult = {
+  url: string;
+};
+
 export type SendSmsResult = {
   id: number;
   destinationNumber: string;
@@ -347,6 +359,18 @@ type ApiReportLinkResponse = {
 };
 
 type ApiRescheduleLinkResponse = {
+  url: string;
+};
+
+type ApiPcpFormLinkResponse = {
+  url: string;
+};
+
+type ApiScrotalFormLinkResponse = {
+  url: string;
+};
+
+type ApiTransvagFormLinkResponse = {
   url: string;
 };
 
@@ -699,6 +723,42 @@ export async function getRescheduleLink(
 ): Promise<RescheduleLinkResult> {
   const response = await apiClient.post<ApiRescheduleLinkResponse>(
     API_ENDPOINTS.patients.rescheduleLink(appointmentId),
+  );
+
+  return {
+    url: response.url,
+  };
+}
+
+export async function getPcpFormLink(
+  appointmentId: string,
+): Promise<PcpFormLinkResult> {
+  const response = await apiClient.post<ApiPcpFormLinkResponse>(
+    API_ENDPOINTS.patients.pcpFormLink(appointmentId),
+  );
+
+  return {
+    url: response.url,
+  };
+}
+
+export async function getScrotalFormLink(
+  appointmentId: string,
+): Promise<ScrotalFormLinkResult> {
+  const response = await apiClient.post<ApiScrotalFormLinkResponse>(
+    API_ENDPOINTS.patients.scrotalFormLink(appointmentId),
+  );
+
+  return {
+    url: response.url,
+  };
+}
+
+export async function getTransvagFormLink(
+  appointmentId: string,
+): Promise<TransvagFormLinkResult> {
+  const response = await apiClient.post<ApiTransvagFormLinkResponse>(
+    API_ENDPOINTS.patients.transvagFormLink(appointmentId),
   );
 
   return {

@@ -96,6 +96,15 @@ export const API_ENDPOINTS = {
 
     rescheduleLink: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}/reschedule-link`,
+
+    pcpFormLink: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/pcp-form-link`,
+
+    scrotalFormLink: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/scrotal-form-link`,
+
+    transvagFormLink: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/transvag-form-link`,
   },
 
   reports: {
