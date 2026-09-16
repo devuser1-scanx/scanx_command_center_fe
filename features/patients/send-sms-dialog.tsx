@@ -11,10 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { usePcpFormLink } from "@/features/patients/hooks/use-pcp-form-link";
 import { useReportLink } from "@/features/patients/hooks/use-report-link";
 import { useRescheduleLink } from "@/features/patients/hooks/use-reschedule-link";
+import { useScrotalFormLink } from "@/features/patients/hooks/use-scrotal-form-link";
 import { useSendSms } from "@/features/patients/hooks/use-send-sms";
 import { useSmsPrefill } from "@/features/patients/hooks/use-sms-prefill";
+import { useTransvagFormLink } from "@/features/patients/hooks/use-transvag-form-link";
 
 export type SmsPurpose =
   | "ask_for_review"
@@ -22,7 +25,10 @@ export type SmsPurpose =
   | "report"
   | "payment_link"
   | "waiting"
-  | "reschedule";
+  | "reschedule"
+  | "pcp_form"
+  | "scrotal_form"
+  | "transvag_form";
 
 type SendSmsDialogProps = {
   open: boolean;
@@ -89,6 +95,33 @@ function buildRescheduleBody(
   return `Hi ${firstNameOf(patientName)}, if you need to reschedule your ScanX appointment, you can do so here: ${link}`;
 }
 
+function buildPcpFormBody(
+  patientName: string,
+  pcpFormUrl: string | null,
+): string {
+  const link = pcpFormUrl ?? "[PCP form link not available yet]";
+
+  return `Hi ${firstNameOf(patientName)}, please complete your PCP Declaration form using the link below before your ScanX appointment: ${link}`;
+}
+
+function buildScrotalFormBody(
+  patientName: string,
+  scrotalFormUrl: string | null,
+): string {
+  const link = scrotalFormUrl ?? "[Scrotal Consent form link not available yet]";
+
+  return `Hi ${firstNameOf(patientName)}, please complete your Scrotal Consent form using the link below before your ScanX appointment: ${link}`;
+}
+
+function buildTransvagFormBody(
+  patientName: string,
+  transvagFormUrl: string | null,
+): string {
+  const link = transvagFormUrl ?? "[Transvaginal Consent form link not available yet]";
+
+  return `Hi ${firstNameOf(patientName)}, please complete your Transvaginal Consent form using the link below before your ScanX appointment: ${link}`;
+}
+
 // Not personalized by name on purpose - it's a fixed front-desk template
 // addressed generically, matching how it's used today.
 const WAITING_BODY =
@@ -106,6 +139,9 @@ const PURPOSE_TITLE: Record<SmsPurpose, string> = {
   payment_link: "Text payment link",
   waiting: "Text waiting message",
   reschedule: "Text reschedule link",
+  pcp_form: "Text PCP form",
+  scrotal_form: "Text Scrotal Consent form",
+  transvag_form: "Text TV/Consent form",
 };
 
 export function SendSmsDialog({
@@ -129,6 +165,18 @@ export function SendSmsDialog({
   const rescheduleLink = useRescheduleLink(
     appointmentId,
     open && purpose === "reschedule",
+  );
+  const pcpFormLink = usePcpFormLink(
+    appointmentId,
+    open && purpose === "pcp_form",
+  );
+  const scrotalFormLink = useScrotalFormLink(
+    appointmentId,
+    open && purpose === "scrotal_form",
+  );
+  const transvagFormLink = useTransvagFormLink(
+    appointmentId,
+    open && purpose === "transvag_form",
   );
   const sendSmsMutation = useSendSms(appointmentId);
 
@@ -184,6 +232,24 @@ export function SendSmsDialog({
         rescheduleLink.data?.url ?? null,
       );
       break;
+    case "pcp_form":
+      defaultBody = buildPcpFormBody(
+        patientName,
+        pcpFormLink.data?.url ?? null,
+      );
+      break;
+    case "scrotal_form":
+      defaultBody = buildScrotalFormBody(
+        patientName,
+        scrotalFormLink.data?.url ?? null,
+      );
+      break;
+    case "transvag_form":
+      defaultBody = buildTransvagFormBody(
+        patientName,
+        transvagFormLink.data?.url ?? null,
+      );
+      break;
   }
 
   const displayedBody = body ?? defaultBody;
@@ -194,6 +260,18 @@ export function SendSmsDialog({
   const rescheduleLinkUnavailable =
     purpose === "reschedule" &&
     (rescheduleLink.isPending || rescheduleLink.isError);
+
+  const pcpFormLinkUnavailable =
+    purpose === "pcp_form" &&
+    (pcpFormLink.isPending || pcpFormLink.isError);
+
+  const scrotalFormLinkUnavailable =
+    purpose === "scrotal_form" &&
+    (scrotalFormLink.isPending || scrotalFormLink.isError);
+
+  const transvagFormLinkUnavailable =
+    purpose === "transvag_form" &&
+    (transvagFormLink.isPending || transvagFormLink.isError);
 
   function handleSend() {
     sendSmsMutation.mutate(
@@ -280,6 +358,42 @@ export function SendSmsDialog({
                 {rescheduleLink.error.message}
               </div>
             )}
+
+            {purpose === "pcp_form" && pcpFormLink.isPending && (
+              <div className="mt-1 text-xs text-[#999999]">
+                Generating a PCP form link…
+              </div>
+            )}
+
+            {purpose === "pcp_form" && pcpFormLink.isError && (
+              <div className="mt-1 text-xs text-[#be123c]">
+                {pcpFormLink.error.message}
+              </div>
+            )}
+
+            {purpose === "scrotal_form" && scrotalFormLink.isPending && (
+              <div className="mt-1 text-xs text-[#999999]">
+                Generating a Scrotal Consent form link…
+              </div>
+            )}
+
+            {purpose === "scrotal_form" && scrotalFormLink.isError && (
+              <div className="mt-1 text-xs text-[#be123c]">
+                {scrotalFormLink.error.message}
+              </div>
+            )}
+
+            {purpose === "transvag_form" && transvagFormLink.isPending && (
+              <div className="mt-1 text-xs text-[#999999]">
+                Generating a Transvaginal Consent form link…
+              </div>
+            )}
+
+            {purpose === "transvag_form" && transvagFormLink.isError && (
+              <div className="mt-1 text-xs text-[#be123c]">
+                {transvagFormLink.error.message}
+              </div>
+            )}
           </div>
         </div>
 
@@ -301,7 +415,10 @@ export function SendSmsDialog({
               !destinationNumber.trim() ||
               !displayedBody.trim() ||
               reportLinkUnavailable ||
-              rescheduleLinkUnavailable
+              rescheduleLinkUnavailable ||
+              pcpFormLinkUnavailable ||
+              scrotalFormLinkUnavailable ||
+              transvagFormLinkUnavailable
             }
             className="rounded-md bg-[#0891b2] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0e7490] disabled:pointer-events-none disabled:opacity-50"
           >

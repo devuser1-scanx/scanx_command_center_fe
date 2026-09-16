@@ -240,11 +240,19 @@ export function PatientProfileView({
           <ActionButton
             label="Send PCP Form"
             className="bg-[#4338ca] hover:bg-[#3730a3]"
+            onClick={() => setSmsPurpose("pcp_form")}
+          />
+
+          <ActionButton
+            label="Send Scrotal Form"
+            className="bg-[#0f766e] hover:bg-[#115e59]"
+            onClick={() => setSmsPurpose("scrotal_form")}
           />
 
           <ActionButton
             label="Send TV/Consent Form"
             className="bg-[#c2410c] hover:bg-[#9a3412]"
+            onClick={() => setSmsPurpose("transvag_form")}
           />
 
           <ActionMenuButton
