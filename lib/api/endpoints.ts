@@ -76,6 +76,9 @@ export const API_ENDPOINTS = {
     detail: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}`,
 
+    manualCheckIn: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/manual-check-in`,
+
     sendFax: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}/fax`,
 

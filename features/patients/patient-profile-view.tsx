@@ -4,11 +4,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   ActionButton,
   ActionMenuButton,
 } from "@/features/patients/patient-action-buttons";
+import { useManualCheckIn } from "@/features/patients/hooks/use-manual-check-in";
 import { usePatientProfile } from "@/features/patients/hooks/use-patient-profile";
 import { SendFaxDialog } from "@/features/patients/send-fax-dialog";
 import {
@@ -20,6 +23,8 @@ import {
   type SmsPurpose,
 } from "@/features/patients/send-sms-dialog";
 import { getStatusClasses } from "@/features/dashboard/admin/timeline-utils";
+import { usePermission } from "@/hooks/use-permission";
+import { PERMISSIONS } from "@/lib/constants/permissions";
 import { cn } from "@/lib/utils";
 
 type PatientProfileViewProps = {
@@ -95,11 +100,22 @@ export function PatientProfileView({
   appointmentId,
 }: PatientProfileViewProps) {
   const profileQuery = usePatientProfile(appointmentId);
+  const manualCheckInMutation = useManualCheckIn(appointmentId);
+  const { hasPermission } = usePermission();
+
   const [isFaxDialogOpen, setIsFaxDialogOpen] = useState(false);
   const [isMailDialogOpen, setIsMailDialogOpen] = useState(false);
   const [mailPurpose, setMailPurpose] = useState<MailPurpose>("report");
   const [smsPurpose, setSmsPurpose] = useState<SmsPurpose | null>(null);
+  const [isManualCheckInDialogOpen, setIsManualCheckInDialogOpen] =
+    useState(false);
+  const [manualCheckInCooldown, setManualCheckInCooldown] =
+    useState(false);
   const [visitsPage, setVisitsPage] = useState(1);
+
+  const canManualCheckIn = hasPermission(
+    PERMISSIONS.APPOINTMENTS_UPDATE,
+  );
 
   /**
    * Reset to page 1 whenever a different patient is loaded.
@@ -113,6 +129,8 @@ export function PatientProfileView({
   if (appointmentId !== lastAppointmentId) {
     setLastAppointmentId(appointmentId);
     setVisitsPage(1);
+    setManualCheckInCooldown(false);
+    setIsManualCheckInDialogOpen(false);
   }
 
   if (profileQuery.isLoading) {
@@ -149,6 +167,47 @@ export function PatientProfileView({
       visit.appointmentId === profile.selectedAppointmentId,
   );
 
+  async function handleManualCheckIn() {
+    try {
+      const result = await manualCheckInMutation.mutateAsync();
+
+      setIsManualCheckInDialogOpen(false);
+      setManualCheckInCooldown(true);
+
+      window.setTimeout(() => {
+        setManualCheckInCooldown(false);
+      }, 10_000);
+
+      if (result.alreadyCheckedIn) {
+        toast.info("Patient is already checked in.");
+        return;
+      }
+
+      const integrationStatuses = Object.values(
+        result.integrations,
+      );
+      const hasIntegrationFailure = integrationStatuses.some(
+        (integrationStatus) =>
+          integrationStatus.startsWith("failed"),
+      );
+
+      if (hasIntegrationFailure) {
+        toast.warning(
+          "Patient checked in successfully, but one or more follow-up integrations did not complete.",
+        );
+        return;
+      }
+
+      toast.success("Patient checked in successfully.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to check in this patient.",
+      );
+    }
+  }
+
   const totalVisitPages = Math.max(
     1,
     Math.ceil(profile.visits.length / VISITS_PER_PAGE),
@@ -169,14 +228,36 @@ export function PatientProfileView({
       </Link>
 
       <section className="rounded-2xl border border-[#e4ddd0] bg-white p-5 shadow-sm">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
           <div>
             <h2 className="text-2xl font-bold text-[#2d2d2d]">
               {profile.patient}
             </h2>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex justify-start lg:justify-center">
+            {canManualCheckIn && (
+              <ActionButton
+                label={
+                  manualCheckInMutation.isPending
+                    ? "Checking In…"
+                    : manualCheckInCooldown
+                      ? "Please wait…"
+                      : "Manual Check-in"
+                }
+                className="bg-[#04863B] px-8 py-3 text-base hover:bg-[#037333]"
+                disabled={
+                  manualCheckInMutation.isPending ||
+                  manualCheckInCooldown
+                }
+                onClick={() =>
+                  setIsManualCheckInDialogOpen(true)
+                }
+              />
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             <button
               type="button"
               onClick={() => {
@@ -625,6 +706,17 @@ export function PatientProfileView({
           </SectionCard>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={isManualCheckInDialogOpen}
+        onOpenChange={setIsManualCheckInDialogOpen}
+        title="Manual Check-in"
+        description={`Check in ${profile.patient} for appointment ${profile.selectedAppointmentId}? This will update ScanX and trigger the configured check-in integrations.`}
+        confirmLabel="Check In Patient"
+        pendingLabel="Checking In…"
+        isPending={manualCheckInMutation.isPending}
+        onConfirm={handleManualCheckIn}
+      />
 
       <SendFaxDialog
         open={isFaxDialogOpen}

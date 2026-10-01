@@ -10,20 +10,27 @@ export function ActionButton({
   label,
   className,
   onClick,
+  disabled = false,
 }: {
   label: string;
   className: string;
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       className={cn(
-        "rounded-md px-4 py-2 text-sm font-semibold text-white transition",
+        "rounded-md px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60",
         className,
       )}
       onClick={onClick}
-      title={onClick ? undefined : "Not yet wired to a backend action"}
+      disabled={disabled}
+      title={
+        onClick || disabled
+          ? undefined
+          : "Not yet wired to a backend action"
+      }
     >
       {label}
     </button>

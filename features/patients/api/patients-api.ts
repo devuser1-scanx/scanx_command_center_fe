@@ -765,3 +765,59 @@ export async function getTransvagFormLink(
     url: response.url,
   };
 }
+
+export type ManualCheckInIntegrationStatuses = {
+  audit: string;
+  acuity: string;
+  googleChat: string;
+  paymentReminderRcs: string;
+};
+
+export type ManualCheckInResult = {
+  success: boolean;
+  message: string;
+  appointmentId: string;
+  checkedIn: boolean;
+  checkedInAt: string | null;
+  alreadyCheckedIn: boolean;
+  integrations: ManualCheckInIntegrationStatuses;
+};
+
+type ApiManualCheckInResponse = {
+  success: boolean;
+  message: string;
+  appointment_id: string;
+  checked_in: boolean;
+  checked_in_at: string | null;
+  already_checked_in: boolean;
+  integrations: {
+    audit: string;
+    acuity: string;
+    google_chat: string;
+    payment_reminder_rcs: string;
+  };
+};
+
+export async function manualCheckIn(
+  appointmentId: string,
+): Promise<ManualCheckInResult> {
+  const response = await apiClient.post<ApiManualCheckInResponse>(
+    API_ENDPOINTS.patients.manualCheckIn(appointmentId),
+  );
+
+  return {
+    success: response.success,
+    message: response.message,
+    appointmentId: response.appointment_id,
+    checkedIn: response.checked_in,
+    checkedInAt: response.checked_in_at,
+    alreadyCheckedIn: response.already_checked_in,
+    integrations: {
+      audit: response.integrations.audit,
+      acuity: response.integrations.acuity,
+      googleChat: response.integrations.google_chat,
+      paymentReminderRcs:
+        response.integrations.payment_reminder_rcs,
+    },
+  };
+}
