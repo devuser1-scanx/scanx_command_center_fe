@@ -120,6 +120,33 @@ export const API_ENDPOINTS = {
       `/reports/groups/${encodeURIComponent(groupId)}/files/${encodeURIComponent(fileId)}/content?mode=${mode}`,
   },
 
+  faxPortal: {
+    board: "/fax-portal/board",
+    counts: "/fax-portal/counts",
+    agents: "/fax-portal/agents",
+
+    moveReferral: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/move`,
+
+    assignReferral: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/assign`,
+
+    intakeQueue: "/fax-portal/intake/queue",
+
+    intakeDetail: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/intake`,
+
+    markViewed: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/viewed`,
+
+    faxPdf: (faxId: number) => `/fax-portal/faxes/${faxId}/pdf`,
+
+    acuityCalendars: "/fax-portal/acuity/calendars",
+    acuityAppointmentTypes: "/fax-portal/acuity/appointment-types",
+    acuityStatus: "/fax-portal/acuity/status",
+    acuityRefresh: "/fax-portal/acuity/refresh",
+  },
+
   dashboard: {
     summary: "/dashboard/summary",
     timeline: "/dashboard/timeline",

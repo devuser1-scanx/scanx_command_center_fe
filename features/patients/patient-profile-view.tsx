@@ -109,14 +109,16 @@ export function PatientProfileView({
   const [smsPurpose, setSmsPurpose] = useState<SmsPurpose | null>(null);
   const [isManualCheckInDialogOpen, setIsManualCheckInDialogOpen] =
     useState(false);
-  const [manualCheckInCooldown, setManualCheckInCooldown] =
-    useState(false);
   const [visitsPage, setVisitsPage] = useState(1);
 
   const canManualCheckIn = hasPermission(
     PERMISSIONS.APPOINTMENTS_UPDATE,
   );
 
+  const [manualCheckInCooldown, setManualCheckInCooldown] =
+  useState(false);
+
+    
   /**
    * Reset to page 1 whenever a different patient is loaded.
    *
@@ -129,8 +131,6 @@ export function PatientProfileView({
   if (appointmentId !== lastAppointmentId) {
     setLastAppointmentId(appointmentId);
     setVisitsPage(1);
-    setManualCheckInCooldown(false);
-    setIsManualCheckInDialogOpen(false);
   }
 
   if (profileQuery.isLoading) {
@@ -167,16 +167,15 @@ export function PatientProfileView({
       visit.appointmentId === profile.selectedAppointmentId,
   );
 
+  const isCheckedIn =
+    profile.checkin !== null ||
+    selectedVisit?.status === "Checked In";
+
   async function handleManualCheckIn() {
     try {
       const result = await manualCheckInMutation.mutateAsync();
 
       setIsManualCheckInDialogOpen(false);
-      setManualCheckInCooldown(true);
-
-      window.setTimeout(() => {
-        setManualCheckInCooldown(false);
-      }, 10_000);
 
       if (result.alreadyCheckedIn) {
         toast.info("Patient is already checked in.");
@@ -228,36 +227,14 @@ export function PatientProfileView({
       </Link>
 
       <section className="rounded-2xl border border-[#e4ddd0] bg-white p-5 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div>
             <h2 className="text-2xl font-bold text-[#2d2d2d]">
               {profile.patient}
             </h2>
           </div>
 
-          <div className="flex justify-start lg:justify-center">
-            {canManualCheckIn && (
-              <ActionButton
-                label={
-                  manualCheckInMutation.isPending
-                    ? "Checking In…"
-                    : manualCheckInCooldown
-                      ? "Please wait…"
-                      : "Manual Check-in"
-                }
-                className="bg-[#04863B] px-8 py-3 text-base hover:bg-[#037333]"
-                disabled={
-                  manualCheckInMutation.isPending ||
-                  manualCheckInCooldown
-                }
-                onClick={() =>
-                  setIsManualCheckInDialogOpen(true)
-                }
-              />
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-2 lg:justify-end">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => {
@@ -280,6 +257,26 @@ export function PatientProfileView({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 border-t border-[#e4ddd0] pt-4">
+          {canManualCheckIn && (
+            <ActionButton
+              label={
+                isCheckedIn
+                  ? "Checked In"
+                  : manualCheckInMutation.isPending
+                    ? "Checking In…"
+                    : "Manual Check-in"
+              }
+              className="bg-[#04863B] hover:bg-[#037333]"
+              disabled={
+                isCheckedIn ||
+                manualCheckInMutation.isPending
+              }
+              onClick={() =>
+                setIsManualCheckInDialogOpen(true)
+              }
+            />
+          )}
+
           <ActionButton
             label="Waiting"
             className="bg-[#b45309] hover:bg-[#92400e]"
