@@ -1,5 +1,3 @@
-// features/patients/hooks/use-patient-profile.ts
-
 import { useQuery } from "@tanstack/react-query";
 
 import {
@@ -7,10 +5,11 @@ import {
   type PatientProfile,
 } from "@/features/patients/api/patients-api";
 import { normalizeApiError } from "@/lib/api/api-error";
+import { queryKeys } from "@/lib/query/query-keys";
 
 export function usePatientProfile(appointmentId: string) {
   return useQuery<PatientProfile, Error>({
-    queryKey: ["patients", "profile", appointmentId] as const,
+    queryKey: queryKeys.patients.profile(appointmentId),
 
     queryFn: async () => {
       try {

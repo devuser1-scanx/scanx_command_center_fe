@@ -2,8 +2,8 @@
 
 import type { UserRole } from "@/features/auth/types/auth-types";
 import {
+  FAX_PORTAL_ROUTES,
   PUBLIC_ROUTES,
-  SALES_ROUTES,
   SONOGRAPHER_ROUTES,
   WORKSPACE_ROUTES,
 } from "@/lib/constants/routes";
@@ -28,7 +28,9 @@ export function getRoleRedirectPath(
       return SONOGRAPHER_ROUTES.patientSearch;
 
     case "sales":
-      return SALES_ROUTES.dashboard;
+      // Sales agents work out of the FAX Portal; the old /sales/dashboard
+      // placeholder has no navigation.
+      return FAX_PORTAL_ROUTES.board;
 
     default:
       return PUBLIC_ROUTES.unauthorized;

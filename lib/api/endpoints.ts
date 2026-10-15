@@ -76,6 +76,9 @@ export const API_ENDPOINTS = {
     detail: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}`,
 
+    manualCheckIn: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/manual-check-in`,
+
     sendFax: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}/fax`,
 
@@ -115,6 +118,60 @@ export const API_ENDPOINTS = {
 
     fileContent: (groupId: string, fileId: string, mode: "inline" | "attachment") =>
       `/reports/groups/${encodeURIComponent(groupId)}/files/${encodeURIComponent(fileId)}/content?mode=${mode}`,
+  },
+
+  faxPortal: {
+    board: "/fax-portal/board",
+    counts: "/fax-portal/counts",
+    agents: "/fax-portal/agents",
+
+    moveReferral: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/move`,
+
+    assignReferral: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/assign`,
+
+    intakeQueue: "/fax-portal/intake/queue",
+
+    intakeDetail: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/intake`,
+
+    markViewed: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/viewed`,
+
+    faxPdf: (faxId: number) => `/fax-portal/faxes/${faxId}/pdf`,
+
+    searchReferrals: "/fax-portal/referrals/search",
+
+    caseDetail: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/case`,
+
+    startCall: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/calls`,
+
+    dialPatient: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/calls/dial`,
+
+    abandonCall: (callId: number) => `/fax-portal/calls/${callId}/abandon`,
+
+    callResult: (callId: number) => `/fax-portal/calls/${callId}/result`,
+
+    doNotCall: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/do-not-call`,
+
+    messageTemplates: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/message-templates`,
+
+    sendMessage: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/messages`,
+
+    bookingInfo: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/booking`,
+
+    acuityCalendars: "/fax-portal/acuity/calendars",
+    acuityAppointmentTypes: "/fax-portal/acuity/appointment-types",
+    acuityStatus: "/fax-portal/acuity/status",
+    acuityRefresh: "/fax-portal/acuity/refresh",
   },
 
   dashboard: {

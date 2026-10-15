@@ -42,3 +42,21 @@ export const SONOGRAPHER_ROUTES = {
 export const SALES_ROUTES = {
   dashboard: "/sales/dashboard",
 } as const;
+
+/**
+ * Sales & FAX Referrals (the "FAX Portal"). Shared by admin, front_desk and
+ * sales - see app/(dashboard)/(fax-portal)/layout.tsx.
+ */
+export const FAX_PORTAL_ROUTES = {
+  board: "/fax-portal/board",
+  queue: "/fax-portal/queue",
+  intake: "/fax-portal/intake",
+  case: "/fax-portal/case",
+  insights: "/fax-portal/insights",
+} as const;
+
+export const faxPortalCaseRoute = (referralId: number): string =>
+  `${FAX_PORTAL_ROUTES.case}/${referralId}`;
+
+export const faxPortalIntakeRoute = (referralId: number): string =>
+  `${FAX_PORTAL_ROUTES.intake}?referral=${referralId}`;
