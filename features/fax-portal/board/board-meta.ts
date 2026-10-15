@@ -29,6 +29,19 @@ export const COLUMN_META: Record<
   exception: { color: "#c0392b", subtitle: "Needs attention" },
 };
 
+export const STATUS_LABELS: Record<ReferralStatusCode, string> = {
+  review_required: "Review Required",
+  ready_for_contact: "Ready for Contact",
+  follow_up_due: "Follow-up Due",
+  callback_requested: "Callback Requested",
+  fax_provider_name_pending: "Fax Provider Name Pending",
+  didnt_respond: "Didn't Respond",
+  appointment_booked: "Appointment Booked",
+  not_referral: "Not Referrals",
+  declined: "Declined",
+  exception: "Exception",
+};
+
 export const MAX_CALL_ATTEMPTS = 5;
 
 /** "4m", "5h", "3d" - how long ago something happened. */

@@ -141,6 +141,33 @@ export const API_ENDPOINTS = {
 
     faxPdf: (faxId: number) => `/fax-portal/faxes/${faxId}/pdf`,
 
+    searchReferrals: "/fax-portal/referrals/search",
+
+    caseDetail: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/case`,
+
+    startCall: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/calls`,
+
+    dialPatient: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/calls/dial`,
+
+    abandonCall: (callId: number) => `/fax-portal/calls/${callId}/abandon`,
+
+    callResult: (callId: number) => `/fax-portal/calls/${callId}/result`,
+
+    doNotCall: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/do-not-call`,
+
+    messageTemplates: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/message-templates`,
+
+    sendMessage: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/messages`,
+
+    bookingInfo: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/booking`,
+
     acuityCalendars: "/fax-portal/acuity/calendars",
     acuityAppointmentTypes: "/fax-portal/acuity/appointment-types",
     acuityStatus: "/fax-portal/acuity/status",

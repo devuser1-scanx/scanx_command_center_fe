@@ -1,6 +1,8 @@
 // app/(dashboard)/(fax-portal)/fax-portal/case/[referralId]/page.tsx
 
-import { FaxPortalPlaceholder } from "@/features/fax-portal/fax-portal-placeholder";
+import { notFound } from "next/navigation";
+
+import { CasePage } from "@/features/fax-portal/case/case-page";
 
 type ReferralCasePageProps = {
   params: Promise<{ referralId: string }>;
@@ -10,11 +12,11 @@ export default async function ReferralCasePage({
   params,
 }: ReferralCasePageProps) {
   const { referralId } = await params;
+  const id = Number(referralId);
 
-  return (
-    <FaxPortalPlaceholder
-      title={`Referral Case #${decodeURIComponent(referralId)}`}
-      description="The booking details, call controls, text messages and activity for this referral will appear here."
-    />
-  );
+  if (!Number.isInteger(id) || id <= 0) {
+    notFound();
+  }
+
+  return <CasePage referralId={id} />;
 }

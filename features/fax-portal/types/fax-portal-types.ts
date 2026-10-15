@@ -258,3 +258,200 @@ export type AcuitySyncStatus = {
   calendars: number;
   appointment_types: number;
 };
+
+// ---------------------------------------------------------------------
+// Referral Case
+// ---------------------------------------------------------------------
+
+export const CALL_LIMIT = 5;
+
+export type CaseFields = IntakeFields & {
+  reason: string | null;
+  reason_other: string | null;
+};
+
+export type CaseFax = {
+  id: number;
+  job_id: string;
+  page_count: number | null;
+  received_at: string;
+  has_pdf: boolean;
+};
+
+export type CaseOutreach = {
+  qualifying_call_count: number;
+  total_call_count: number;
+  call_limit: number;
+  last_contact_at: string | null;
+  next_action_at: string | null;
+  next_action_type: string | null;
+  callback_at: string | null;
+};
+
+export type CallResultCode =
+  | "booked"
+  | "no_answer"
+  | "voicemail"
+  | "busy"
+  | "failed"
+  | "callback_requested"
+  | "declined"
+  | "wrong_number"
+  | "other";
+
+export type CallResultOption = {
+  code: CallResultCode;
+  label: string;
+  counts_toward_limit_default: boolean;
+};
+
+export type CaseCall = {
+  id: number;
+  started_at: string;
+  user_name: string | null;
+  result: CallResultCode | null;
+  result_label: string | null;
+  counts_toward_limit: boolean;
+  attempt_number: number | null;
+  other_reason: string | null;
+  notes: string | null;
+  twilio_status: string | null;
+  duration_s: number | null;
+  source: "twilio" | "manual";
+};
+
+export type CaseMessage = {
+  id: number;
+  direction: "outbound" | "inbound";
+  channel: "rcs" | "sms";
+  body: string;
+  status: string;
+  status_at: string;
+  created_at: string;
+  user_name: string | null;
+  template_code: string | null;
+  error_message: string | null;
+};
+
+export type TimelineEvent = {
+  at: string;
+  kind: "status" | "call" | "message" | "edit" | "system";
+  title: string;
+  detail: string | null;
+  actor: string | null;
+};
+
+/** Click-to-call: the call row, and the token the browser connects with. */
+export type DialCallResponse = {
+  call_id: number;
+  started_at: string;
+  token: string;
+};
+
+export type CaseDetail = {
+  id: number;
+  row_version: number;
+  status: ReferralStatusCode;
+  status_label: string;
+  is_open: boolean;
+  created_at: string;
+  fields: CaseFields;
+  clinic: ClinicChoice | null;
+  exam_1: ExamChoice | null;
+  exam_2: ExamChoice | null;
+  assignee: BoardAssignee | null;
+  fax: CaseFax;
+  outreach: CaseOutreach;
+  phone_e164: string | null;
+  sms_opted_out: boolean;
+  do_not_call: boolean;
+  can_call: boolean;
+  call_blocked_reason: string | null;
+  can_text: boolean;
+  text_blocked_reason: string | null;
+  open_call_id: number | null;
+  open_call_source: "twilio" | "manual" | null;
+  /** Twilio's progress on the open call, e.g. "ringing" or "patient:no-answer". */
+  open_call_status: string | null;
+  /** The result Twilio's report suggests; the agent still picks. */
+  suggested_result: CallResultCode | null;
+  call_service_connected: boolean;
+  /** Whether the viewer can use Call patient (also needs their own phone). */
+  can_dial: boolean;
+  dial_blocked_reason: string | null;
+  result_options: CallResultOption[];
+  calls: CaseCall[];
+  messages: CaseMessage[];
+  timeline: TimelineEvent[];
+};
+
+/** Case edits reuse the intake update shape, plus the reason fields. */
+export type CaseUpdate = IntakeUpdate & {
+  email?: string | null;
+  physician_email?: string | null;
+  reason?: string | null;
+  reason_other?: string | null;
+};
+
+export type CallResultInput = {
+  callId: number;
+  result: CallResultCode;
+  otherReason?: string;
+  countsTowardLimit?: boolean;
+  notes?: string;
+  callbackAt?: string;
+  nextActionAt?: string;
+  acuityAppointmentId?: string;
+};
+
+export type CallResultResponse = {
+  call_id: number;
+  status: ReferralStatusCode;
+  row_version: number;
+  qualifying_call_count: number;
+  counts_toward_limit: boolean;
+  moved_to: ReferralStatusCode | null;
+  call_limit_reached: boolean;
+};
+
+export type MessageTemplate = {
+  code: string;
+  label: string;
+  language: string;
+  body: string;
+  missing: string[];
+};
+
+export type SendMessageResponse = {
+  message_id: number;
+  status: string;
+  channel: "rcs" | "sms";
+};
+
+export type BookingMatch = {
+  appointment_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  appointment_type: string | null;
+  date: string | null;
+  time: string | null;
+  canceled: boolean;
+  already_linked: boolean;
+};
+
+export type BookingInfo = {
+  booking_link: string | null;
+  booking_link_blocked_reason: string | null;
+  matches: BookingMatch[];
+  matches_unavailable: string | null;
+};
+
+export type ReferralSearchItem = {
+  id: number;
+  display_name: string;
+  phone: string | null;
+  status: ReferralStatusCode;
+  status_label: string;
+  created_at: string;
+  assignee: BoardAssignee | null;
+};

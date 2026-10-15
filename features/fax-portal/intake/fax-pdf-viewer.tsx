@@ -10,6 +10,11 @@ import { useStoredNumber } from "@/hooks/use-stored-number";
 import { useFaxPdf } from "@/features/fax-portal/hooks/use-intake";
 import { ResizeHandle } from "@/features/fax-portal/intake/resize-handle";
 import type { IntakeFax } from "@/features/fax-portal/types/fax-portal-types";
+
+/** What the viewer needs of a fax; the Referral Case has no document list. */
+export type ViewerFax = Pick<IntakeFax, "id" | "job_id" | "page_count"> & {
+  documents?: IntakeFax["documents"];
+};
 import { cn } from "@/lib/utils";
 
 const MIN_HEIGHT = 360;
@@ -17,7 +22,7 @@ const MAX_HEIGHT = 2400;
 const HEIGHT_STEP = 60;
 
 type FaxPdfViewerProps = {
-  fax: IntakeFax;
+  fax: ViewerFax;
   referralId: number;
   /**
    * True while the column splitter is being dragged. The PDF is an iframe
@@ -70,13 +75,14 @@ export function FaxPdfViewer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFullscreen]);
 
-  const jumpTargets = fax.documents.filter(
+  const documents = fax.documents ?? [];
+  const jumpTargets = documents.filter(
     (document) => document.page_start !== null,
   );
 
   // Open on the referral page when Comprehend found one.
   const referralPage =
-    fax.documents.find(
+    documents.find(
       (document) =>
         document.doc_type?.toLowerCase() === "referral" &&
         document.page_start !== null,

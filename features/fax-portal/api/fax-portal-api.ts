@@ -4,6 +4,15 @@ import { apiClient, apiRequestBlob } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import type {
   AcuityAppointmentType,
+  BookingInfo,
+  CallResultInput,
+  CallResultResponse,
+  CaseDetail,
+  DialCallResponse,
+  CaseUpdate,
+  MessageTemplate,
+  ReferralSearchItem,
+  SendMessageResponse,
   AcuityCalendar,
   AcuitySyncStatus,
   BoardQuery,
@@ -172,4 +181,106 @@ export async function getAcuityStatus(): Promise<AcuitySyncStatus> {
 
 export async function refreshAcuity(): Promise<unknown> {
   return apiClient.post(API_ENDPOINTS.faxPortal.acuityRefresh);
+}
+
+// ---------------------------------------------------------------------
+// Referral Case
+// ---------------------------------------------------------------------
+
+export async function searchReferrals(
+  q: string,
+): Promise<ReferralSearchItem[]> {
+  const params = new URLSearchParams({ limit: "20" });
+
+  if (q.trim()) {
+    params.set("q", q.trim());
+  }
+
+  return apiClient.get<ReferralSearchItem[]>(
+    `${API_ENDPOINTS.faxPortal.searchReferrals}?${params.toString()}`,
+  );
+}
+
+export async function getCase(referralId: number): Promise<CaseDetail> {
+  return apiClient.get<CaseDetail>(
+    API_ENDPOINTS.faxPortal.caseDetail(referralId),
+  );
+}
+
+export async function updateCase(
+  referralId: number,
+  body: CaseUpdate,
+): Promise<IntakeUpdateResponse> {
+  return apiClient.patch<IntakeUpdateResponse>(
+    API_ENDPOINTS.faxPortal.caseDetail(referralId),
+    body,
+  );
+}
+
+export async function startCall(
+  referralId: number,
+): Promise<{ call_id: number; started_at: string }> {
+  return apiClient.post(API_ENDPOINTS.faxPortal.startCall(referralId));
+}
+
+/** Click-to-call: logs the call and returns the token the browser connects with. */
+export async function dialPatient(
+  referralId: number,
+): Promise<DialCallResponse> {
+  return apiClient.post(API_ENDPOINTS.faxPortal.dialPatient(referralId));
+}
+
+/** The browser could not start the call: removes the call row. */
+export async function abandonCall(callId: number): Promise<void> {
+  await apiClient.post(API_ENDPOINTS.faxPortal.abandonCall(callId));
+}
+
+export async function recordCallResult(
+  input: CallResultInput,
+): Promise<CallResultResponse> {
+  return apiClient.post<CallResultResponse>(
+    API_ENDPOINTS.faxPortal.callResult(input.callId),
+    {
+      result: input.result,
+      other_reason: input.otherReason,
+      counts_toward_limit: input.countsTowardLimit,
+      notes: input.notes,
+      callback_at: input.callbackAt,
+      next_action_at: input.nextActionAt,
+      acuity_appointment_id: input.acuityAppointmentId,
+    },
+  );
+}
+
+export async function markDoNotCall(
+  referralId: number,
+): Promise<{ status: string; row_version: number }> {
+  return apiClient.post(API_ENDPOINTS.faxPortal.doNotCall(referralId));
+}
+
+export async function getMessageTemplates(
+  referralId: number,
+): Promise<MessageTemplate[]> {
+  return apiClient.get<MessageTemplate[]>(
+    API_ENDPOINTS.faxPortal.messageTemplates(referralId),
+  );
+}
+
+export async function sendMessage(
+  referralId: number,
+  body: string,
+  templateCode: string | null,
+): Promise<SendMessageResponse> {
+  return apiClient.post<SendMessageResponse>(
+    API_ENDPOINTS.faxPortal.sendMessage(referralId),
+    { body, template_code: templateCode },
+  );
+}
+
+export async function getBookingInfo(
+  referralId: number,
+): Promise<BookingInfo> {
+  return apiClient.get<BookingInfo>(
+    API_ENDPOINTS.faxPortal.bookingInfo(referralId),
+  );
 }

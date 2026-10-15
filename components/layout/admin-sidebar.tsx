@@ -175,10 +175,13 @@ function SidebarLink({
   item,
   nested = false,
   badgeCount,
+  onNavigate,
 }: {
   item: AdminNavItem;
   nested?: boolean;
   badgeCount?: number;
+  /** Called when the link is followed (closes the slide-out menu). */
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
 
@@ -210,6 +213,7 @@ function SidebarLink({
   return (
     <Link
       href={item.href}
+      onClick={onNavigate}
       aria-current={isActive ? "page" : undefined}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
@@ -226,7 +230,7 @@ function SidebarLink({
   );
 }
 
-function FaxPortalGroup() {
+function FaxPortalGroup({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const counts = useFaxPortalCounts().data;
 
@@ -287,6 +291,7 @@ function FaxPortalGroup() {
               item={item}
               nested
               badgeCount={item.badge ? counts?.[item.badge] : undefined}
+              onNavigate={onNavigate}
             />
           ))}
         </nav>
@@ -295,7 +300,11 @@ function FaxPortalGroup() {
   );
 }
 
-export function AdminSidebar() {
+/**
+ * The logo and every navigation group the signed-in role may see. Used by
+ * the fixed sidebar (large screens) and the slide-out menu (small screens).
+ */
+export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthStore((state) => state.user);
   const isAdmin = user?.role === "admin";
   const canSeeOperations =
@@ -310,7 +319,7 @@ export function AdminSidebar() {
     : null;
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col self-start bg-[#111827] text-white lg:flex">
+    <>
       <div className="border-b border-white/10 px-5 py-5">
         <div className="flex items-center gap-3">
           {logoSource ? (
@@ -341,7 +350,11 @@ export function AdminSidebar() {
 
             <nav className="space-y-1">
               {mainNavItems.map((item) => (
-                <SidebarLink key={item.href} item={item} />
+                <SidebarLink
+                  key={item.href}
+                  item={item}
+                  onNavigate={onNavigate}
+                />
               ))}
             </nav>
           </div>
@@ -353,7 +366,7 @@ export function AdminSidebar() {
               Sales
             </p>
 
-            <FaxPortalGroup />
+            <FaxPortalGroup onNavigate={onNavigate} />
           </div>
         )}
 
@@ -368,6 +381,7 @@ export function AdminSidebar() {
                 <SidebarLink
                   key={item.href}
                   item={item}
+                  onNavigate={onNavigate}
                 />
               ))}
             </nav>
@@ -382,10 +396,20 @@ export function AdminSidebar() {
                 href: "/admin/settings",
                 icon: Settings,
               }}
+              onNavigate={onNavigate}
             />
           </div>
         )}
       </div>
+    </>
+  );
+}
+
+/** The fixed sidebar for large screens; smaller screens use MobileSidebar. */
+export function AdminSidebar() {
+  return (
+    <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col self-start bg-[#111827] text-white lg:flex">
+      <SidebarBody />
     </aside>
   );
 }
