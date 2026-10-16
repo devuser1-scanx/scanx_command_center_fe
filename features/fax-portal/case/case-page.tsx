@@ -4,22 +4,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ReassignDialog } from "@/features/fax-portal/board/board-dialogs";
-import { BookingDialog } from "@/features/fax-portal/case/booking-dialog";
 import { CallCard } from "@/features/fax-portal/case/call-card";
 import { CaseHeader } from "@/features/fax-portal/case/case-header";
 import { CaseTimeline } from "@/features/fax-portal/case/case-timeline";
 import { MessagePanel } from "@/features/fax-portal/case/message-panel";
+import { useCallQueue } from "@/features/fax-portal/hooks/use-call-queue";
 import { useCase } from "@/features/fax-portal/hooks/use-case";
 import {
   useAssignReferral,
   useFaxPortalAgents,
-  useMoveReferral,
 } from "@/features/fax-portal/hooks/use-referral-actions";
 import { FaxPdfViewer } from "@/features/fax-portal/intake/fax-pdf-viewer";
+import { caseHref } from "@/features/fax-portal/queue/call-queue";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { FAX_PORTAL_ROUTES } from "@/lib/constants/routes";
 
@@ -31,11 +31,16 @@ export function CasePage({ referralId }: { referralId: number }) {
   const isManager = user?.role === "admin";
 
   const caseQuery = useCase(referralId);
-  const move = useMoveReferral();
   const assign = useAssignReferral();
 
+  // Opened from My Call Queue (power dial): offer the next referral to call.
+  const fromQueue = useSearchParams().get("from") === "queue";
+  const queue = useCallQueue(fromQueue);
+  const nextInQueue = queue.data?.items.find(
+    (item) => item.priority !== "later" && item.referral_id !== referralId,
+  );
+
   const [showFax, setShowFax] = useState(false);
-  const [showBooked, setShowBooked] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
   const agents = useFaxPortalAgents(showReassign);
 
@@ -104,6 +109,32 @@ export function CasePage({ referralId }: { referralId: number }) {
           Find another referral
         </Link>
 
+        {fromQueue && (
+          <>
+            <Link
+              href={FAX_PORTAL_ROUTES.queue}
+              className="text-xs font-semibold text-[#8b6f47] hover:underline"
+            >
+              ← My call queue
+            </Link>
+
+            {nextInQueue ? (
+              <Link
+                href={caseHref(nextInQueue.referral_id)}
+                className="inline-flex h-7 items-center rounded-md bg-[#1e8a4c] px-3 text-xs font-semibold text-white hover:bg-[#19753f]"
+              >
+                Next in queue: {nextInQueue.patient_name} →
+              </Link>
+            ) : (
+              !queue.isPending && (
+                <span className="text-xs text-[#6b6f78]">
+                  Nothing else to call right now.
+                </span>
+              )
+            )}
+          </>
+        )}
+
         {isManager && (
           <Button
             type="button"
@@ -125,7 +156,7 @@ export function CasePage({ referralId }: { referralId: number }) {
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-4">
-          <CallCard detail={detail} onMarkBooked={() => setShowBooked(true)} />
+          <CallCard detail={detail} />
 
           <CaseTimeline events={detail.timeline} />
         </div>
@@ -159,31 +190,6 @@ export function CasePage({ referralId }: { referralId: number }) {
             <FaxPdfViewer fax={detail.fax} referralId={detail.id} />
           </div>
         </div>
-      )}
-
-      {showBooked && (
-        <BookingDialog
-          referralId={detail.id}
-          patientName={patientName}
-          isPending={move.isPending}
-          onClose={() => setShowBooked(false)}
-          onSubmit={async (acuityAppointmentId) => {
-            try {
-              await move.mutateAsync({
-                referralId: detail.id,
-                toStatus: "appointment_booked",
-                rowVersion: detail.row_version,
-                source: "button",
-                acuityAppointmentId,
-              });
-
-              toast.success("Marked as booked.");
-              setShowBooked(false);
-            } catch {
-              // The hook already showed the reason.
-            }
-          }}
-        />
       )}
 
       {showReassign && (

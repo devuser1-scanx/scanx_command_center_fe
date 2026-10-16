@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { IdleTimeoutGuard } from "@/components/auth/idle-timeout-guard";
 import {
   AUTHENTICATED_ROUTES,
   PUBLIC_ROUTES,
@@ -16,6 +17,9 @@ import {
 import { useAuthStore } from "@/lib/auth/auth-store";
 
 
+/** True inside a ProtectedRoute that already runs the idle timeout. */
+const IdleGuardMounted = createContext(false);
+
 type ProtectedRouteProps = {
   children: ReactNode;
   allowedRoles?: UserRole[];
@@ -29,6 +33,7 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const alreadyGuarded = useContext(IdleGuardMounted);
 
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore(
@@ -99,7 +104,13 @@ export function ProtectedRoute({
     return <AuthLoadingScreen />;
   }
 
-  return children;
+  // Layouts nest (a page group inside the dashboard): one timer for them all.
+  return (
+    <IdleGuardMounted.Provider value={true}>
+      {!alreadyGuarded && <IdleTimeoutGuard />}
+      {children}
+    </IdleGuardMounted.Provider>
+  );
 }
 
 function AuthLoadingScreen() {

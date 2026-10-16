@@ -35,6 +35,7 @@ type Draft = {
   dob: string;
   reason: string;
   reason_other: string;
+  address: string;
   physician_name: string;
   physician_fax_no: string;
   physician_email: string;
@@ -51,6 +52,7 @@ const TEXT_KEYS = [
   "dob",
   "reason",
   "reason_other",
+  "address",
   "physician_name",
   "physician_fax_no",
   "physician_email",
@@ -70,6 +72,7 @@ function toDraft(detail: CaseDetail): Draft {
     dob: f.dob ?? "",
     reason: f.reason ?? "",
     reason_other: f.reason_other ?? "",
+    address: f.address ?? "",
     physician_name: f.physician_name ?? "",
     physician_fax_no: f.physician_fax_no ?? "",
     physician_email: f.physician_email ?? "",
@@ -156,6 +159,11 @@ export function CaseHeader({ detail, onViewFax }: CaseHeaderProps) {
   const pendingUpdate = buildUpdate(detail, draft);
   const typeList = useMemo(() => types.data ?? [], [types.data]);
   const calendarList = useMemo(() => calendars.data ?? [], [calendars.data]);
+
+  // The reasons the chosen exam's Acuity form offers.
+  const reasonOptions =
+    typeList.find((t) => String(t.acuity_appointment_type_id) === draft.examId)
+      ?.reason_options ?? [];
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -313,7 +321,25 @@ export function CaseHeader({ detail, onViewFax }: CaseHeaderProps) {
               id="cs-exam"
               value={draft.examId}
               disabled={!editable}
-              onChange={(e) => set("examId", e.target.value)}
+              onChange={(e) => {
+                set("examId", e.target.value);
+
+                // A reason the new exam does not offer is dropped.
+                const offered =
+                  typeList.find(
+                    (t) => String(t.acuity_appointment_type_id) === e.target.value,
+                  )?.reason_options ?? [];
+
+                if (
+                  draft.reason &&
+                  !offered.some(
+                    (option) =>
+                      option.toLowerCase() === draft.reason.toLowerCase(),
+                  )
+                ) {
+                  set("reason", "");
+                }
+              }}
               className={cls}
             >
               <option value="">Choose an exam</option>
@@ -411,21 +437,55 @@ export function CaseHeader({ detail, onViewFax }: CaseHeaderProps) {
           missing={!draft.reason.trim()}
           className="sm:col-span-2"
         >
-          {(cls) => (
-            <input
-              id="cs-reason"
-              value={draft.reason}
-              disabled={!editable}
-              maxLength={255}
-              onChange={(e) => set("reason", e.target.value)}
-              className={cls}
-            />
-          )}
+          {(cls) =>
+            draft.examId && reasonOptions.length === 0 ? (
+              // This exam's Acuity form has no reason list: whatever is on the
+              // card is shown, but nothing can be chosen.
+              <input
+                id="cs-reason"
+                value={draft.reason}
+                disabled
+                placeholder="This exam has no reason options"
+                className={cls}
+              />
+            ) : (
+              <select
+                id="cs-reason"
+                value={draft.reason}
+                disabled={!editable || !draft.examId}
+                onChange={(e) => set("reason", e.target.value)}
+                className={cls}
+              >
+                <option value="">
+                  {draft.examId ? "Choose a reason" : "Choose the exam first"}
+                </option>
+
+                {draft.reason &&
+                  !reasonOptions.some(
+                    (option) =>
+                      option.toLowerCase() === draft.reason.toLowerCase(),
+                  ) && (
+                    <option value={draft.reason}>
+                      {draft.reason} (not offered for this exam)
+                    </option>
+                  )}
+
+                {reasonOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            )
+          }
         </Field>
 
         <Field
           id="cs-reason-other"
-          label="If 'Other', please explain"
+          label="Other reasons"
+          missing={
+            draft.reason.toLowerCase() === "other" && !draft.reason_other.trim()
+          }
           className="sm:col-span-2"
         >
           {(cls) => (
@@ -433,8 +493,26 @@ export function CaseHeader({ detail, onViewFax }: CaseHeaderProps) {
               id="cs-reason-other"
               value={draft.reason_other}
               disabled={!editable}
-              placeholder="Only if the reason is Other"
+              placeholder="Write anything here (required if the reason is Other)"
               onChange={(e) => set("reason_other", e.target.value)}
+              className={cls}
+            />
+          )}
+        </Field>
+
+        <Field
+          id="cs-address"
+          label="Patient address"
+          className="sm:col-span-2 xl:col-span-4"
+        >
+          {(cls) => (
+            <input
+              id="cs-address"
+              value={draft.address}
+              disabled={!editable}
+              maxLength={500}
+              placeholder="Not on the fax"
+              onChange={(e) => set("address", e.target.value)}
               className={cls}
             />
           )}

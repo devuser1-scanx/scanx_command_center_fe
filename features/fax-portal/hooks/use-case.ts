@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import {
   abandonCall,
   dialPatient,
+  directBook,
+  getDirectBookingDates,
+  getDirectBookingTimes,
   getBookingInfo,
   getCase,
   getMessageTemplates,
@@ -23,12 +26,14 @@ import {
 } from "@/features/fax-portal/api/fax-portal-api";
 import { FAX_PORTAL_POLL_MS } from "@/features/fax-portal/hooks/use-fax-portal-counts";
 import type {
+  AvailableTime,
   BookingInfo,
   CallResultInput,
   CallResultResponse,
   CaseDetail,
   CaseUpdate,
   DialCallResponse,
+  DirectBookResponse,
   IntakeUpdateResponse,
   MessageTemplate,
   ReferralSearchItem,
@@ -76,6 +81,7 @@ export function useRefreshCase(referralId: number) {
     void queryClient.invalidateQueries({ queryKey: caseQueryKey(referralId) });
     void queryClient.invalidateQueries({ queryKey: ["fax-portal", "board"] });
     void queryClient.invalidateQueries({ queryKey: ["fax-portal", "counts"] });
+    void queryClient.invalidateQueries({ queryKey: ["fax-portal", "call-queue"] });
     void queryClient.invalidateQueries({ queryKey: ["fax-portal", "booking", referralId] });
   };
 }
@@ -267,6 +273,70 @@ export function useBookingInfo(referralId: number, enabled = true) {
     },
 
     staleTime: 0,
+  });
+}
+
+/** Days in `month` (YYYY-MM) that have open times in Acuity. */
+export function useDirectBookingDates(referralId: number, month: string) {
+  return useQuery<string[], Error>({
+    queryKey: ["fax-portal", "direct-booking", referralId, "dates", month],
+
+    queryFn: async () => {
+      try {
+        return await getDirectBookingDates(referralId, month);
+      } catch (error) {
+        throw normalizeApiError(error, "Unable to load the open dates.");
+      }
+    },
+
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useDirectBookingTimes(referralId: number, date: string | null) {
+  return useQuery<AvailableTime[], Error>({
+    queryKey: ["fax-portal", "direct-booking", referralId, "times", date],
+    enabled: date !== null,
+
+    queryFn: async () => {
+      try {
+        return await getDirectBookingTimes(referralId, date ?? "");
+      } catch (error) {
+        throw normalizeApiError(error, "Unable to load the open times.");
+      }
+    },
+
+    // Slots are taken by others at any moment: always look again.
+    staleTime: 0,
+    retry: false,
+  });
+}
+
+/** Books the appointment in Acuity and marks the referral Appointment Booked. */
+export function useDirectBook(referralId: number) {
+  const refresh = useRefreshCase(referralId);
+
+  return useMutation<
+    DirectBookResponse,
+    Error,
+    { time: string; email: string | null }
+  >({
+    mutationFn: async (body) => {
+      try {
+        return await directBook(referralId, body);
+      } catch (error) {
+        throw normalizeApiError(error, "Unable to book the appointment.");
+      }
+    },
+
+    onSuccess: refresh,
+
+    onError: (error) => {
+      toast.error(error.message);
+      // The time may have been taken: show the latest open times.
+      refresh();
+    },
   });
 }
 

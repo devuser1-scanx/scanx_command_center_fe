@@ -6,6 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Call, Device } from "@twilio/voice-sdk";
 
+import { setCallActive, touchActivity } from "@/lib/auth/activity";
+
 export type BrowserCallState =
   | "idle"
   | "starting"
@@ -89,6 +91,10 @@ export function useBrowserCall({ onEnded }: Options = {}) {
     deviceRef.current?.destroy();
     deviceRef.current = null;
     callRef.current = null;
+
+    // The call is over: the idle timeout counts from now.
+    setCallActive(false);
+    touchActivity();
   }, []);
 
   const finish = useCallback(
@@ -120,6 +126,8 @@ export function useBrowserCall({ onEnded }: Options = {}) {
     async (token: string, callId: number) => {
       setState("starting");
       callIdRef.current = callId;
+      // Talking to a patient is not being idle: no automatic sign-out mid-call.
+      setCallActive(true);
 
       try {
         const { Call: CallClass, Device: DeviceClass } = await import(

@@ -39,6 +39,16 @@ export type CurrentUserResponse = {
   clinic_access: BackendClinicAccess[];
 };
 
+/** The automatic-logoff rules the server sets for the browser. */
+export type SessionPolicy = {
+  /** Sign the user out after this much inactivity. */
+  idle_timeout_seconds: number;
+  /** Warn this long before that happens. */
+  warning_seconds: number;
+  /** A session ends this long after login whatever the activity. */
+  max_session_seconds: number;
+};
+
 export type LoginRequest = {
   email: string;
   password: string;
