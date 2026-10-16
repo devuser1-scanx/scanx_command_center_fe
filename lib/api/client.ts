@@ -1,6 +1,7 @@
 // lib/api/client.ts
 
 import { env } from "@/lib/env";
+import { rememberSignedOutReason } from "@/lib/auth/activity";
 import { tokenManager } from "@/lib/auth/token-manager";
 import {
   ApiError,
@@ -179,6 +180,12 @@ async function parseSuccessResponse<T>(
 }
 
 async function clearAuthenticationState(): Promise<void> {
+  // Someone who was signed in and now is not (the session reached its maximum
+  // length, or was revoked): say so on the sign-in page.
+  if (tokenManager.hasAccessToken()) {
+    rememberSignedOutReason("expired");
+  }
+
   tokenManager.clearTokens();
 
   /**

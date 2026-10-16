@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
     refresh: "/auth/refresh",
     logout: "/auth/logout",
     me: "/auth/me",
+    sessionPolicy: "/auth/session-policy",
     changePassword: "/auth/change-password",
     forgotPassword: "/auth/forgot-password",
     resetPassword: "/auth/reset-password",
@@ -132,6 +133,7 @@ export const API_ENDPOINTS = {
       `/fax-portal/referrals/${referralId}/assign`,
 
     intakeQueue: "/fax-portal/intake/queue",
+    callQueue: "/fax-portal/queue",
 
     intakeDetail: (referralId: number) =>
       `/fax-portal/referrals/${referralId}/intake`,
@@ -167,6 +169,15 @@ export const API_ENDPOINTS = {
 
     bookingInfo: (referralId: number) =>
       `/fax-portal/referrals/${referralId}/booking`,
+
+    directBookingDates: (referralId: number, month: string) =>
+      `/fax-portal/referrals/${referralId}/direct-booking/dates?month=${month}`,
+
+    directBookingTimes: (referralId: number, date: string) =>
+      `/fax-portal/referrals/${referralId}/direct-booking/times?date=${date}`,
+
+    directBook: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/direct-booking`,
 
     acuityCalendars: "/fax-portal/acuity/calendars",
     acuityAppointmentTypes: "/fax-portal/acuity/appointment-types",

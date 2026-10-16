@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { STATUS_LABELS, formatWhen } from "@/features/fax-portal/board/board-meta";
-import { BookingDialog } from "@/features/fax-portal/case/booking-dialog";
+import { DirectBookingDialog } from "@/features/fax-portal/case/direct-booking-dialog";
 import {
   type BrowserCallState,
   BrowserCallError,
@@ -17,13 +17,13 @@ import {
 } from "@/features/fax-portal/hooks/use-browser-call";
 import {
   useAbandonCall,
-  useBookingInfo,
   useDialPatient,
   useDoNotCall,
   useRecordCallResult,
   useRefreshCase,
   useStartCall,
 } from "@/features/fax-portal/hooks/use-case";
+import { useMoveReferral } from "@/features/fax-portal/hooks/use-referral-actions";
 import {
   CALL_LIMIT,
   type CallResultCode,
@@ -34,8 +34,13 @@ import { cn } from "@/lib/utils";
 
 type CallCardProps = {
   detail: CaseDetail;
-  onMarkBooked: () => void;
 };
+
+/**
+ * "Book in Acuity with these details" opens the direct-booking dialog (pick an
+ * open time, and Acuity books it). Off until that is rolled out.
+ */
+const DIRECT_BOOKING_ENABLED = false;
 
 /** The small caption under each result button. */
 const RESULT_HINT: Record<CallResultCode, string> = {
@@ -169,7 +174,7 @@ function OutreachPlan({ detail, now }: { detail: CaseDetail; now: number }) {
   );
 }
 
-export function CallCard({ detail, onMarkBooked }: CallCardProps) {
+export function CallCard({ detail }: CallCardProps) {
   const startMutation = useStartCall(detail.id);
   const dialMutation = useDialPatient(detail.id);
   const abandonMutation = useAbandonCall(detail.id);
@@ -189,7 +194,7 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
   });
   const resultMutation = useRecordCallResult(detail.id);
   const doNotCall = useDoNotCall(detail.id);
-  const booking = useBookingInfo(detail.id);
+  const move = useMoveReferral();
 
   const [now, setNow] = useState(() => Date.now());
 
@@ -205,7 +210,7 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
   const [otherCounts, setOtherCounts] = useState(false);
   const [callbackFor, setCallbackFor] = useState(false);
   const [callbackAt, setCallbackAt] = useState(defaultCallback);
-  const [bookedFor, setBookedFor] = useState(false);
+  const [directBookingFor, setDirectBookingFor] = useState(false);
   const [confirmDeclined, setConfirmDeclined] = useState(false);
   const [confirmDnc, setConfirmDnc] = useState(false);
 
@@ -214,7 +219,8 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
   const busy =
     startMutation.isPending ||
     dialMutation.isPending ||
-    resultMutation.isPending;
+    resultMutation.isPending ||
+    move.isPending;
   const qualifying = detail.outreach.qualifying_call_count;
   const liveText =
     browserCallText(phone.state, phone.seconds) ?? liveCallText(detail);
@@ -301,6 +307,27 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
     }
   }
 
+  /** Marks the referral booked straight away: nothing is asked. The appointment
+   *  is linked to it later (from Acuity), not typed in here. */
+  async function markBooked() {
+    if (move.isPending) {
+      return;
+    }
+
+    try {
+      await move.mutateAsync({
+        referralId: detail.id,
+        toStatus: "appointment_booked",
+        rowVersion: detail.row_version,
+        source: "button",
+      });
+
+      toast.success("Marked as booked.");
+    } catch {
+      // The hook already showed the reason.
+    }
+  }
+
   function handleResult(code: CallResultCode) {
     if (busy || !canRecord) {
       return;
@@ -310,8 +337,6 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
       setShowOther((current) => !current);
     } else if (code === "callback_requested") {
       setCallbackFor(true);
-    } else if (code === "booked") {
-      setBookedFor(true);
     } else if (code === "declined") {
       setConfirmDeclined(true);
     } else {
@@ -519,36 +544,30 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {booking.data?.booking_link ? (
-          <a
-            href={booking.data.booking_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-8 items-center rounded-md bg-[#2f6fc0] px-3 text-sm font-medium text-white hover:bg-[#285fa5]"
-          >
-            Book in Acuity with these details
-          </a>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            disabled
-            title={
-              booking.data?.booking_link_blocked_reason ??
-              "Loading the booking link"
-            }
-            className="bg-[#2f6fc0] text-white"
-          >
-            Book in Acuity with these details
-          </Button>
-        )}
+        {/* Books the appointment in Acuity from here (the direct-booking
+            dialog). Switched off until that is rolled out: set
+            DIRECT_BOOKING_ENABLED to true. */}
+        <Button
+          type="button"
+          size="sm"
+          disabled={!DIRECT_BOOKING_ENABLED}
+          title={
+            DIRECT_BOOKING_ENABLED
+              ? "Books the appointment in Acuity right here: pick an open time."
+              : "Coming soon."
+          }
+          onClick={() => setDirectBookingFor(true)}
+          className="bg-[#2f6fc0] text-white"
+        >
+          Book in Acuity with these details
+        </Button>
 
         <Button
           type="button"
           size="sm"
           variant="outline"
           disabled={!detail.is_open}
-          onClick={onMarkBooked}
+          onClick={() => void markBooked()}
         >
           Mark booked
         </Button>
@@ -564,12 +583,6 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
           {detail.do_not_call ? "Number blocked" : "Do not call"}
         </Button>
       </div>
-
-      {!booking.data?.booking_link && booking.data?.booking_link_blocked_reason && (
-        <p className="mt-1.5 text-[11px] text-[#6b6f78]">
-          {booking.data.booking_link_blocked_reason}
-        </p>
-      )}
 
       {callbackFor && (
         <div
@@ -636,23 +649,18 @@ export function CallCard({ detail, onMarkBooked }: CallCardProps) {
         </div>
       )}
 
-      {bookedFor && (
-        <BookingDialog
+      {directBookingFor && (
+        <DirectBookingDialog
           referralId={detail.id}
           patientName={
             [detail.fields.first_name, detail.fields.last_name]
               .filter(Boolean)
               .join(" ") || "the patient"
           }
-          isPending={busy}
-          onClose={() => setBookedFor(false)}
-          onSubmit={async (acuityAppointmentId) => {
-            const saved = await submit("booked", { acuityAppointmentId });
-
-            if (saved) {
-              setBookedFor(false);
-            }
-          }}
+          examName={detail.exam_1?.name ?? null}
+          clinicName={detail.clinic?.name ?? null}
+          email={detail.fields.email}
+          onClose={() => setDirectBookingFor(false)}
         />
       )}
 

@@ -4,7 +4,10 @@ import { apiClient, apiRequestBlob } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import type {
   AcuityAppointmentType,
+  AvailableTime,
   BookingInfo,
+  CallQueue,
+  DirectBookResponse,
   CallResultInput,
   CallResultResponse,
   CaseDetail,
@@ -274,6 +277,41 @@ export async function sendMessage(
   return apiClient.post<SendMessageResponse>(
     API_ENDPOINTS.faxPortal.sendMessage(referralId),
     { body, template_code: templateCode },
+  );
+}
+
+/** The signed-in user's call queue, in the order to call them. */
+export async function getCallQueue(): Promise<CallQueue> {
+  return apiClient.get<CallQueue>(API_ENDPOINTS.faxPortal.callQueue);
+}
+
+/** Days in `month` (YYYY-MM) with open times for the referral's exam and clinic. */
+export async function getDirectBookingDates(
+  referralId: number,
+  month: string,
+): Promise<string[]> {
+  return apiClient.get<string[]>(
+    API_ENDPOINTS.faxPortal.directBookingDates(referralId, month),
+  );
+}
+
+export async function getDirectBookingTimes(
+  referralId: number,
+  date: string,
+): Promise<AvailableTime[]> {
+  return apiClient.get<AvailableTime[]>(
+    API_ENDPOINTS.faxPortal.directBookingTimes(referralId, date),
+  );
+}
+
+/** Books the appointment in Acuity itself and marks the referral booked. */
+export async function directBook(
+  referralId: number,
+  body: { time: string; email: string | null },
+): Promise<DirectBookResponse> {
+  return apiClient.post<DirectBookResponse>(
+    API_ENDPOINTS.faxPortal.directBook(referralId),
+    body,
   );
 }
 

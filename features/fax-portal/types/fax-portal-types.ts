@@ -155,6 +155,10 @@ export type IntakeDocument = {
   doc_type: string | null;
   page_start: number | null;
   page_end: number | null;
+  /** Comprehend's per-document "PHI Summary". Read-only. */
+  summary: string | null;
+  /** False for a document that belongs to another patient on the fax. */
+  for_patient: boolean;
 };
 
 export type IntakeFax = {
@@ -178,6 +182,10 @@ export type IntakeFields = {
   physician_name: string | null;
   physician_fax_no: string | null;
   physician_email: string | null;
+  address: string | null;
+  /** One of Exam 1's reason options, and the free text written beside it. */
+  reason: string | null;
+  reason_other: string | null;
 };
 
 export type ClinicChoice = {
@@ -191,10 +199,19 @@ export type ExamChoice = {
   fax_text: string | null;
 };
 
+/** How far a clinic is from the patient's address (ZIP code to ZIP code). */
+export type ClinicDistance = {
+  acuity_calendar_id: number;
+  name: string;
+  miles: number;
+};
+
 export type IntakeSuggestions = {
   clinic: (ClinicChoice & { reason: string }) | null;
   exam_1: ExamChoice | null;
   exam_2: ExamChoice | null;
+  /** Nearest first; empty when the address has no usable ZIP code. */
+  clinic_distances: ClinicDistance[];
 };
 
 export type IntakeDetail = {
@@ -222,6 +239,9 @@ export type IntakeUpdate = {
   gender?: string | null;
   physician_name?: string | null;
   physician_fax_no?: string | null;
+  address?: string | null;
+  reason?: string | null;
+  reason_other?: string | null;
   acuity_calendar_id?: number | null;
   exam_1_id?: number | null;
   exam_1_fax_text?: string | null;
@@ -249,6 +269,8 @@ export type AcuityAppointmentType = {
   duration_min: number | null;
   price: string | null;
   available_at_calendar: boolean;
+  /** The options of this exam's Acuity "Reason for the appointment" dropdown. */
+  reason_options: string[];
 };
 
 export type AcuitySyncStatus = {
@@ -265,10 +287,7 @@ export type AcuitySyncStatus = {
 
 export const CALL_LIMIT = 5;
 
-export type CaseFields = IntakeFields & {
-  reason: string | null;
-  reason_other: string | null;
-};
+export type CaseFields = IntakeFields;
 
 export type CaseFax = {
   id: number;
@@ -437,6 +456,54 @@ export type BookingMatch = {
   time: string | null;
   canceled: boolean;
   already_linked: boolean;
+};
+
+export type CallQueuePriority =
+  | "callback"
+  | "reply"
+  | "overdue"
+  | "new"
+  | "later";
+
+/** One referral in the signed-in user's call queue. */
+export type CallQueueItem = {
+  referral_id: number;
+  priority: CallQueuePriority;
+  /** "Callback", "SMS reply", "Overdue", "New", or "Due 3 PM". */
+  priority_label: string;
+  patient_name: string;
+  phone: string | null;
+  phone_e164: string | null;
+  exam: string | null;
+  provider: string | null;
+  received_at: string;
+  attempts: number;
+  attempt_limit: number;
+  last_result: string | null;
+  /** e.g. "Call 3", "Call at 5:30 PM", "Reply to SMS - Call 3". */
+  next_action: string;
+};
+
+export type CallQueue = {
+  items: CallQueueItem[];
+  /** Referrals to work now (everything except "later today"). */
+  due_now: number;
+  later_today: number;
+};
+
+/** One open slot in Acuity: `time` is sent back to book it. */
+export type AvailableTime = {
+  time: string;
+  /** The time of day in the clinic's timezone, e.g. "3:30 PM". */
+  label: string;
+};
+
+export type DirectBookResponse = {
+  appointment_id: string;
+  status: ReferralStatusCode;
+  row_version: number;
+  /** e.g. "Oct 20 at 3:30 PM". */
+  when_label: string;
 };
 
 export type BookingInfo = {

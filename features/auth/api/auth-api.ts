@@ -9,12 +9,18 @@ import type {
   LoginResponse,
   MessageResponse,
   ResetPasswordRequest,
+  SessionPolicy,
 } from "@/features/auth/types/auth-types";
 
 import { normalizeAuthUser } from "@/features/auth/utils/normalize-auth-user";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { getCsrfToken } from "@/lib/auth/csrf";
+
+/** The automatic-logoff rules (idle timeout, warning, maximum session). */
+export async function getSessionPolicy(): Promise<SessionPolicy> {
+  return apiClient.get<SessionPolicy>(API_ENDPOINTS.auth.sessionPolicy);
+}
 
 /**
  * Log in with email and password.

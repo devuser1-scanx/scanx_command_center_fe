@@ -7,6 +7,7 @@ import {
 
 import { logout } from "@/features/auth/api/auth-api";
 import { normalizeApiError } from "@/lib/api/api-error";
+import { broadcastSignedOut } from "@/lib/auth/activity";
 import { useAuthStore } from "@/lib/auth/auth-store";
 
 export function useLogout() {
@@ -45,6 +46,9 @@ export function useLogout() {
      */
     onSettled: async () => {
       clearAuth();
+
+      // The app's other tabs sign out too.
+      broadcastSignedOut("manual");
 
       /**
        * Remove all cached user-specific data.

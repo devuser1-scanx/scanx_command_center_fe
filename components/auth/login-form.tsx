@@ -22,6 +22,7 @@ import {
 } from "@/features/auth/schemas/auth-schema";
 import { getRoleRedirectPath } from "@/features/auth/utils/role-redirect";
 import { normalizeApiError } from "@/lib/api/api-error";
+import { takeSignedOutReason } from "@/lib/auth/activity";
 import {
   AUTHENTICATED_ROUTES,
   PUBLIC_ROUTES,
@@ -33,6 +34,9 @@ export function LoginForm() {
 
   const [showPassword, setShowPassword] =
     useState(false);
+
+  // Why the person was signed out, if they were (read once).
+  const [signedOutReason] = useState(takeSignedOutReason);
 
   const {
     register,
@@ -96,6 +100,17 @@ export function LoginForm() {
       noValidate
       className="space-y-[25px]"
     >
+      {signedOutReason && (
+        <p
+          role="status"
+          className="rounded-md bg-[#fcf1dc] px-3 py-2.5 text-sm leading-6 text-[#7a5b13]"
+        >
+          {signedOutReason === "idle"
+            ? "You were signed out after a period of inactivity, to protect patient information. Please sign in again."
+            : "Your session has ended. Please sign in again."}
+        </p>
+      )}
+
       <div>
         <label
           htmlFor="email"

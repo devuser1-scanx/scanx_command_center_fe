@@ -37,6 +37,9 @@ type Draft = {
   gender: string;
   physician_name: string;
   physician_fax_no: string;
+  address: string;
+  reason: string;
+  reason_other: string;
   clinicId: string;
   exam1Id: string;
   exam2Id: string;
@@ -61,6 +64,9 @@ function savedDraft(detail: IntakeDetail): Draft {
     gender: f.gender ?? "",
     physician_name: f.physician_name ?? "",
     physician_fax_no: f.physician_fax_no ?? "",
+    address: f.address ?? "",
+    reason: f.reason ?? "",
+    reason_other: f.reason_other ?? "",
     clinicId: detail.clinic ? String(detail.clinic.acuity_calendar_id) : "",
     exam1Id: detail.exam_1 ? String(detail.exam_1.acuity_appointment_type_id) : "",
     exam2Id: detail.exam_2 ? String(detail.exam_2.acuity_appointment_type_id) : "",
@@ -115,6 +121,9 @@ function buildUpdate(detail: IntakeDetail, draft: Draft): IntakeUpdate | null {
     "gender",
     "physician_name",
     "physician_fax_no",
+    "address",
+    "reason",
+    "reason_other",
   ] as const) {
     if (draft[key].trim() !== saved[key].trim()) {
       update[key] = blankToNull(draft[key]);
@@ -210,6 +219,24 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
 
   const calendars = useAcuityCalendars();
   const clinicIdNumber = draft.clinicId ? Number(draft.clinicId) : null;
+
+  // Distance from the patient's saved address to each clinic, nearest first.
+  // (Absent from an older backend that has not been updated yet.)
+  const distances = detail.suggestions.clinic_distances ?? [];
+  const distanceNote =
+    distances.length > 0 ? (
+      <span className="mt-0.5 block">
+        From the patient&apos;s address (by ZIP code):{" "}
+        {distances
+          .map((d) => `${d.name} ${Math.round(d.miles)} mi`)
+          .join(" · ")}
+      </span>
+    ) : null;
+
+  // Comprehend's per-document "PHI Summary", for this patient's documents.
+  const patientSummaries = detail.fax.documents.filter(
+    (document) => document.for_patient && document.summary,
+  );
   const types = useAcuityAppointmentTypes(clinicIdNumber);
   const acuityStatus = useAcuityStatus();
   const refresh = useRefreshAcuity();
@@ -238,6 +265,12 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
     !types.isPending &&
     calendarList.length === 0 &&
     typeList.length === 0;
+
+  // The reasons Exam 1's Acuity form offers, and whether "Other" still needs
+  // its explanation (the text box itself is always open).
+  const reasonOptions = typeById.get(draft.exam1Id)?.reason_options ?? [];
+  const otherNeedsText =
+    draft.reason.toLowerCase() === "other" && !draft.reason_other.trim();
 
   const missing: string[] = [];
 
@@ -301,6 +334,12 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
   }
 
   async function handleSave() {
+    if (otherNeedsText) {
+      toast.error("Say what the Other reason is.");
+
+      return;
+    }
+
     try {
       await saveIfNeeded();
       toast.success("Changes saved.");
@@ -318,6 +357,12 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
 
     if (!offeredHere(draft.exam1Id) || !offeredHere(draft.exam2Id)) {
       toast.error("An exam you chose is not offered at that clinic.");
+
+      return;
+    }
+
+    if (otherNeedsText) {
+      toast.error("Say what the Other reason is.");
 
       return;
     }
@@ -472,6 +517,35 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
         </Field>
 
         <Field
+          label="PHI summary"
+          hint={<>From Comprehend &ldquo;PHI Summary&rdquo; · read-only</>}
+        >
+          {patientSummaries.length > 0 ? (
+            <div
+              role="note"
+              aria-label="Comprehend PHI summary"
+              className="max-h-56 space-y-2.5 overflow-auto rounded-md border border-[#e6dfd3] bg-[#faf7f2] px-2.5 py-2 text-xs leading-relaxed text-[#1f2329]"
+            >
+              {patientSummaries.map((document) => (
+                <div key={document.idx}>
+                  {document.name && (
+                    <div className="font-semibold text-[#6f5636]">
+                      {document.name}
+                    </div>
+                  )}
+
+                  <div className="whitespace-pre-wrap">{document.summary}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed border-[#e6dfd3] px-2.5 py-2 text-xs text-[#6b6f78]">
+              No summary from Comprehend.
+            </div>
+          )}
+        </Field>
+
+        <Field
           label="Exam 1"
           htmlFor="ir-exam1"
           hint={examHint(
@@ -489,6 +563,20 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
             onChange={(e) => {
               set("exam1Id", e.target.value);
               set("exam1FaxText", null);
+
+              // A reason the new exam does not offer is dropped.
+              const offered =
+                typeById.get(e.target.value)?.reason_options ?? [];
+
+              if (
+                draft.reason &&
+                !offered.some(
+                  (option) =>
+                    option.toLowerCase() === draft.reason.toLowerCase(),
+                )
+              ) {
+                set("reason", "");
+              }
             }}
             className={cn(
               FIELD_CLASS,
@@ -522,6 +610,75 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
           >
             {examOptions(2)}
           </select>
+        </Field>
+
+        {/* The card holds one reason, and it follows Exam 1 (each exam's
+            Acuity form has its own list). Hidden when Exam 1 has none. */}
+        {(!draft.exam1Id || reasonOptions.length > 0) && (
+          <Field
+            label="Reason for the appointment"
+            htmlFor="ir-reason"
+            hint={
+              draft.exam1Id
+                ? "The options Acuity asks for this exam."
+                : "Choose Exam 1 first."
+            }
+          >
+            <select
+              id="ir-reason"
+              value={draft.reason}
+              disabled={!editable || !draft.exam1Id}
+              onChange={(e) => set("reason", e.target.value)}
+              className={FIELD_CLASS}
+            >
+              <option value="">Choose a reason</option>
+
+              {draft.reason &&
+                !reasonOptions.some(
+                  (option) =>
+                    option.toLowerCase() === draft.reason.toLowerCase(),
+                ) && (
+                  <option value={draft.reason}>
+                    {draft.reason} (not offered for this exam)
+                  </option>
+                )}
+
+              {reasonOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+
+        <Field
+          label="Other reasons"
+          htmlFor="ir-reason-other"
+          hint={
+            otherNeedsText ? (
+              <span className="font-semibold text-[#c0392b]">
+                Say what the &ldquo;Other&rdquo; reason is.
+              </span>
+            ) : (
+              "Anything else about the reason for the appointment."
+            )
+          }
+        >
+          <textarea
+            id="ir-reason-other"
+            rows={2}
+            value={draft.reason_other}
+            disabled={!editable}
+            maxLength={2000}
+            placeholder="Write anything here"
+            onChange={(e) => set("reason_other", e.target.value)}
+            className={cn(
+              FIELD_CLASS,
+              "resize-y",
+              otherNeedsText && editable && "border-[#c0392b] bg-[#fff7f6]",
+            )}
+          />
         </Field>
 
         <Field label="Referring provider" htmlFor="ir-provider">
@@ -560,9 +717,13 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
                     </span>
                   )}
                 {selectedCalendar.location}
+                {distanceNote}
               </>
             ) : (
-              "No clinic on the fax. Choose one from the Acuity locations."
+              <>
+                No clinic on the fax. Choose one from the Acuity locations.
+                {distanceNote}
+              </>
             )
           }
         >
@@ -598,27 +759,17 @@ export function IntakeForm({ detail, onDone }: IntakeFormProps) {
           </select>
         </Field>
 
-        <Field
-          label="PHI summary"
-          hint={
-            <>
-              From Comprehend &ldquo;PHI Summary of Docs&rdquo; · read-only
-            </>
-          }
-        >
-          {detail.fax.summary ? (
-            <div
-              role="note"
-              aria-label="Comprehend summary of the fax"
-              className="max-h-56 overflow-auto rounded-md border border-[#e6dfd3] bg-[#faf7f2] px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap text-[#1f2329]"
-            >
-              {detail.fax.summary}
-            </div>
-          ) : (
-            <div className="rounded-md border border-dashed border-[#e6dfd3] px-2.5 py-2 text-xs text-[#6b6f78]">
-              No summary from Comprehend.
-            </div>
-          )}
+        <Field label="Patient address" htmlFor="ir-address">
+          <textarea
+            id="ir-address"
+            rows={2}
+            value={draft.address}
+            disabled={!editable}
+            maxLength={500}
+            placeholder="Not on the fax"
+            onChange={(e) => set("address", e.target.value)}
+            className={cn(FIELD_CLASS, "resize-y")}
+          />
         </Field>
 
         <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#6b6f78]">
