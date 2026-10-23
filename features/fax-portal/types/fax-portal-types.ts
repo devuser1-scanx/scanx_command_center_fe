@@ -491,6 +491,36 @@ export type CallQueue = {
   later_today: number;
 };
 
+/** What the "fax back to the referring physician" pop-up starts with. */
+export type FaxBackDraft = {
+  /** The number the referral came from (else the physician's on the card). */
+  destination_number: string;
+  destination_source: string;
+  subject: string;
+  /** The message, including the list of contact attempts. */
+  body: string;
+  /** Only a referral in Fax Provider Name Pending can move to Didn't Respond. */
+  can_mark_didnt_respond: boolean;
+  /** Whether the original fax PDF can be sent along with the message. */
+  original_fax_available: boolean;
+};
+
+export type FaxBackInput = {
+  destination_number: string;
+  subject: string;
+  body: string;
+  attach_original: boolean;
+  mark_didnt_respond: boolean;
+};
+
+export type FaxBackResponse = {
+  destination_number: string;
+  email_message_id: string | null;
+  moved_to: ReferralStatusCode | null;
+  row_version: number;
+  sent_at: string;
+};
+
 /** One open slot in Acuity: `time` is sent back to book it. */
 export type AvailableTime = {
   time: string;

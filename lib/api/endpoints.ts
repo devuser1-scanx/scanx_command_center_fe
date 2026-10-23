@@ -176,6 +176,9 @@ export const API_ENDPOINTS = {
     directBookingTimes: (referralId: number, date: string) =>
       `/fax-portal/referrals/${referralId}/direct-booking/times?date=${date}`,
 
+    faxBack: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/fax-back`,
+
     directBook: (referralId: number) =>
       `/fax-portal/referrals/${referralId}/direct-booking`,
 

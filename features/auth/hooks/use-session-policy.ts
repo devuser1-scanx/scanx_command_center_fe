@@ -10,7 +10,7 @@ import type { SessionPolicy } from "@/features/auth/types/auth-types";
  * the same as the server's defaults, so the timer always runs.
  */
 export const DEFAULT_SESSION_POLICY: SessionPolicy = {
-  idle_timeout_seconds: 15 * 60,
+  idle_timeout_seconds: 30 * 60,
   warning_seconds: 2 * 60,
   max_session_seconds: 12 * 60 * 60,
 };

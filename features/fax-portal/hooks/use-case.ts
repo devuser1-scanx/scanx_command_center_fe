@@ -13,12 +13,14 @@ import {
   dialPatient,
   directBook,
   getDirectBookingDates,
+  getFaxBackDraft,
   getDirectBookingTimes,
   getBookingInfo,
   getCase,
   getMessageTemplates,
   markDoNotCall,
   recordCallResult,
+  sendFaxBack,
   searchReferrals,
   sendMessage,
   startCall,
@@ -34,6 +36,9 @@ import type {
   CaseUpdate,
   DialCallResponse,
   DirectBookResponse,
+  FaxBackDraft,
+  FaxBackInput,
+  FaxBackResponse,
   IntakeUpdateResponse,
   MessageTemplate,
   ReferralSearchItem,
@@ -273,6 +278,49 @@ export function useBookingInfo(referralId: number, enabled = true) {
     },
 
     staleTime: 0,
+  });
+}
+
+/** The starting text for the fax-back pop-up; looked up when it opens. */
+export function useFaxBackDraft(referralId: number, enabled: boolean) {
+  return useQuery<FaxBackDraft, Error>({
+    queryKey: ["fax-portal", "fax-back", referralId],
+    enabled,
+
+    queryFn: async () => {
+      try {
+        return await getFaxBackDraft(referralId);
+      } catch (error) {
+        throw normalizeApiError(error, "Unable to prepare the fax.");
+      }
+    },
+
+    // The list of attempts changes with every call: always built fresh.
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  });
+}
+
+/** Faxes the referring physician; the case and board refresh after. */
+export function useSendFaxBack(referralId: number) {
+  const refresh = useRefreshCase(referralId);
+
+  return useMutation<FaxBackResponse, Error, FaxBackInput>({
+    mutationFn: async (input) => {
+      try {
+        return await sendFaxBack(referralId, input);
+      } catch (error) {
+        throw normalizeApiError(error, "Unable to send the fax. Please try again.");
+      }
+    },
+
+    onSuccess: refresh,
+
+    onError: (error) => {
+      toast.error(error.message);
+      refresh();
+    },
   });
 }
 

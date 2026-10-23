@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { STATUS_LABELS, formatWhen } from "@/features/fax-portal/board/board-meta";
+import { FaxBackDialog } from "@/features/fax-portal/case/fax-back-dialog";
 import { DirectBookingDialog } from "@/features/fax-portal/case/direct-booking-dialog";
 import {
   type BrowserCallState,
@@ -211,6 +212,7 @@ export function CallCard({ detail }: CallCardProps) {
   const [callbackFor, setCallbackFor] = useState(false);
   const [callbackAt, setCallbackAt] = useState(defaultCallback);
   const [directBookingFor, setDirectBookingFor] = useState(false);
+  const [faxBackFor, setFaxBackFor] = useState(false);
   const [confirmDeclined, setConfirmDeclined] = useState(false);
   const [confirmDnc, setConfirmDnc] = useState(false);
 
@@ -576,6 +578,19 @@ export function CallCard({ detail }: CallCardProps) {
           type="button"
           size="sm"
           variant="outline"
+          // Didn't Respond is closed, but it is where the fifth call lands:
+          // the physician is faxed from there too.
+          disabled={!detail.is_open && detail.status !== "didnt_respond"}
+          title="Tells the referring physician by fax that the patient could not be reached"
+          onClick={() => setFaxBackFor(true)}
+        >
+          Fax referring physician
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
           disabled={detail.do_not_call || !detail.phone_e164}
           onClick={() => setConfirmDnc(true)}
           className="text-[#c0392b]"
@@ -647,6 +662,14 @@ export function CallCard({ detail }: CallCardProps) {
             </div>
           </form>
         </div>
+      )}
+
+      {faxBackFor && (
+        <FaxBackDialog
+          referralId={detail.id}
+          open
+          onOpenChange={setFaxBackFor}
+        />
       )}
 
       {directBookingFor && (
