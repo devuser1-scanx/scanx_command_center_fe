@@ -578,7 +578,9 @@ export function CallCard({ detail }: CallCardProps) {
           type="button"
           size="sm"
           variant="outline"
-          disabled={!detail.is_open}
+          // Didn't Respond is closed, but it is where the fifth call lands:
+          // the physician is faxed from there too.
+          disabled={!detail.is_open && detail.status !== "didnt_respond"}
           title="Tells the referring physician by fax that the patient could not be reached"
           onClick={() => setFaxBackFor(true)}
         >
