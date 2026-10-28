@@ -8,7 +8,6 @@ import { ApiError } from "@/lib/api/api-error";
 
 const SUPPORTED_ROLES: UserRole[] = [
   "admin",
-  "front_desk",
   "sonographer",
   "sales",
 ];
@@ -33,7 +32,6 @@ function getPrimaryRole(
    */
   const rolePriority: UserRole[] = [
     "admin",
-    "front_desk",
     "sonographer",
     "sales",
   ];

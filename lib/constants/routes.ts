@@ -13,8 +13,8 @@ export const AUTHENTICATED_ROUTES = {
 } as const;
 
 /**
- * Pages shared by every role in the main operational workspace (admin
- * and front_desk today) - no /admin prefix, since these aren't
+ * Pages shared by the roles in the main operational workspace (each
+ * gated by its module permission) - no /admin prefix, since these aren't
  * admin-only. See app/(dashboard)/(workspace)/layout.tsx.
  */
 export const WORKSPACE_ROUTES = {
@@ -24,15 +24,26 @@ export const WORKSPACE_ROUTES = {
 } as const;
 
 /**
+ * The Calls module (the Web Dialer): a group of pages inside the workspace.
+ * See app/(dashboard)/(workspace)/calls.
+ */
+export const CALLS_ROUTES = {
+  dashboard: "/calls",
+  dialer: "/calls/dialer",
+  patients: "/calls/patients",
+  history: "/calls/history",
+} as const;
+
+/**
  * The true Administration section - admin only. See
  * app/(dashboard)/(workspace)/admin/layout.tsx.
  */
 export const ADMIN_ROUTES = {
   users: "/admin/users",
   createUser: "/admin/users/create",
+  user: (userId: number | string) => `/admin/users/${userId}`,
   roles: "/admin/roles",
   clinics: "/admin/clinics",
-  auditLogs: "/admin/audit-logs",
 } as const;
 
 export const SONOGRAPHER_ROUTES = {
@@ -44,8 +55,9 @@ export const SALES_ROUTES = {
 } as const;
 
 /**
- * Sales & FAX Referrals (the "FAX Portal"). Shared by admin, front_desk and
- * sales - see app/(dashboard)/(fax-portal)/layout.tsx.
+ * Sales & FAX Referrals (the "FAX Portal"). Shared by admin and sales
+ * agents (the FAX Portal permission) - see
+ * app/(dashboard)/(fax-portal)/layout.tsx.
  */
 export const FAX_PORTAL_ROUTES = {
   board: "/fax-portal/board",

@@ -9,11 +9,11 @@ type AdminLayoutProps = {
 };
 
 /**
- * The true Administration section (Users, Roles, Clinics, Audit Logs,
+ * The Administration section (Users, Roles, Clinics, Notifications,
  * Settings) - admin only. The shell is already provided by the parent
- * (workspace) layout, which also allows front_desk; this layout is the
- * one place that actually narrows access back down to admin alone for
- * everything nested under it.
+ * (workspace) layout, which admits every signed-in role; this layout is
+ * the one place that narrows access down to admin alone for everything
+ * nested under it.
  */
 export default function AdminLayout({
   children,

@@ -24,7 +24,9 @@ const TOKEN_REJECTED = new Set([20101, 20102, 20104, 31204, 31205, 31206]);
 
 export class BrowserCallError extends Error {}
 
-function describe(error: unknown): string {
+/** A message fit to show for a failed Twilio call or device. Shared with the
+ *  Calls module's dialer. */
+export function describe(error: unknown): string {
   const code = (error as { code?: number } | null)?.code;
 
   if (code === MICROPHONE_DENIED) {

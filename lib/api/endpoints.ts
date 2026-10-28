@@ -23,11 +23,11 @@ export const API_ENDPOINTS = {
     detail: (userId: string) =>
       `/users/${encodeURIComponent(userId)}`,
 
-    activate: (userId: string) =>
-      `/users/${encodeURIComponent(userId)}/activate`,
+    status: (userId: string) =>
+      `/users/${encodeURIComponent(userId)}/status`,
 
-    deactivate: (userId: string) =>
-      `/users/${encodeURIComponent(userId)}/deactivate`,
+    unlock: (userId: string) =>
+      `/users/${encodeURIComponent(userId)}/unlock`,
 
     resetPassword: (userId: string) =>
       `/users/${encodeURIComponent(userId)}/reset-password`,
@@ -192,5 +192,17 @@ export const API_ENDPOINTS = {
     summary: "/dashboard/summary",
     timeline: "/dashboard/timeline",
     actionItems: "/dashboard/action-items",
+  },
+
+  /** The Calls module (the Web Dialer). */
+  calls: {
+    summary: "/calls/summary",
+    recent: "/calls/recent",
+    missed: "/calls/missed",
+    searchPatients: "/calls/patients/search",
+    patientCallHistory: "/calls/patients/call-history",
+    dial: "/calls/dial",
+
+    ended: (callId: number) => `/calls/${callId}/ended`,
   },
 } as const;

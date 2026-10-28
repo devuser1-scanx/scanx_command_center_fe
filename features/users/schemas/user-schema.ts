@@ -30,3 +30,8 @@ export const createUserSchema = z.object({
 });
 
 export type CreateUserFormValues = z.infer<typeof createUserSchema>;
+
+/** Editing an existing user: the email is the sign-in and cannot be changed. */
+export const updateUserSchema = createUserSchema.omit({ email: true });
+
+export type UpdateUserFormValues = z.infer<typeof updateUserSchema>;

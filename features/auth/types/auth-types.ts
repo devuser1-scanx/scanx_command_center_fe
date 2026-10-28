@@ -1,6 +1,5 @@
 export type UserRole =
   | "admin"
-  | "front_desk"
   | "sonographer"
   | "sales";
 

@@ -10,17 +10,18 @@ type WorkspaceLayoutProps = {
 };
 
 /**
- * Shared shell (sidebar + header) for every role that works inside the
- * main operational workspace - currently admin and front_desk. The
- * (workspace) route group keeps "admin" out of the URL for pages both
- * roles use (/dashboard, /patients, /reports); truly admin-only pages
- * live nested under ./admin, gated further by its own layout.
+ * Shared shell (sidebar + header) for every signed-in role. It only checks
+ * that the user is signed in with a supported role; what each role can open
+ * is decided one level down - each module (dashboard, patients, reports)
+ * has its own layout requiring that module's permission, and ./admin
+ * narrows access to admin alone. The (workspace) route group keeps
+ * "workspace" out of the URL (/dashboard, /patients, /reports).
  */
 export default function WorkspaceLayout({
   children,
 }: WorkspaceLayoutProps) {
   return (
-    <ProtectedRoute allowedRoles={["admin", "front_desk"]}>
+    <ProtectedRoute>
       <AdminDashboardShell>{children}</AdminDashboardShell>
     </ProtectedRoute>
   );

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 
 import { useLogout } from "@/features/auth/hooks/use-logout";
+import { ActiveCallBar } from "@/features/calls/components/active-call-bar";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
@@ -53,9 +54,8 @@ export function AdminDashboardShell({
 
   const roleLabels: Record<string, string> = {
     admin: "Admin",
-    front_desk: "Front Desk",
     sonographer: "Sonographer",
-    sales: "Sales",
+    sales: "Sales Agent",
   };
 
   const roleLabel = user ? (roleLabels[user.role] ?? user.role) : "Admin";
@@ -122,13 +122,6 @@ export function AdminDashboardShell({
                   Refresh
                 </button>
 
-                <button
-                  type="button"
-                  className="hidden rounded-md bg-[#8b6f47] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6f5636] md:inline-block"
-                >
-                  New Case
-                </button>
-
                 <div className="hidden text-right lg:block">
                   <p className="text-sm font-semibold text-[#2d2d2d]">
                     {displayName}
@@ -151,6 +144,9 @@ export function AdminDashboardShell({
                 </button>
               </div>
             </div>
+
+            {/* A phone call in progress, whichever page is open. */}
+            <ActiveCallBar />
 
             {/* The search box moves to its own row where the header is narrow. */}
             <form

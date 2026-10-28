@@ -6,22 +6,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity,
-  BarChart3,
   Bell,
   Building2,
   ChartLine,
   ChevronDown,
   ClipboardCheck,
-  ClipboardList,
   FileText,
   FolderOpen,
+  History,
   Inbox,
   Kanban,
   LayoutDashboard,
   MessageSquare,
   Phone,
   PhoneCall,
+  PhoneOutgoing,
   Search,
   Settings,
   ShieldCheck,
@@ -29,9 +28,14 @@ import {
 } from "lucide-react";
 
 import { useFaxPortalCounts } from "@/features/fax-portal/hooks/use-fax-portal-counts";
+import { usePermission } from "@/hooks/use-permission";
 import { SCANX_LOGO_WHITE_BASE64 } from "@/lib/constants/branding";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { FAX_PORTAL_ROUTES } from "@/lib/constants/routes";
+import {
+  MODULE_PERMISSIONS,
+  PERMISSIONS,
+} from "@/lib/constants/permissions";
+import { CALLS_ROUTES, FAX_PORTAL_ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils";
 
 type AdminNavItem = {
@@ -41,6 +45,20 @@ type AdminNavItem = {
     className?: string;
   }>;
   disabled?: boolean;
+  /**
+   * The permission a user needs to see this item (see
+   * lib/constants/permissions.ts). Items without one are always shown.
+   */
+  permission?: string;
+  /**
+   * Active only on this exact path, not on pages beneath it (a group's first
+   * item shares its prefix with the rest of the group).
+   */
+  exact?: boolean;
+  /**
+   * Renders as an expandable group of sub-items instead of a plain link.
+   */
+  group?: "calls";
   /**
    * Which FAX Portal badge count (GET /fax-portal/counts) to show.
    */
@@ -52,48 +70,35 @@ const mainNavItems: AdminNavItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+    permission: MODULE_PERMISSIONS.dashboard,
   },
   {
     label: "Patients",
     href: "/patients",
     icon: Search,
-  },
-  {
-    label: "Appointments",
-    href: "/appointments",
-    icon: ClipboardList,
-    disabled: true,
+    permission: MODULE_PERMISSIONS.patients,
   },
   {
     label: "Messages",
     href: "/messages",
     icon: MessageSquare,
     disabled: true,
+    permission: MODULE_PERMISSIONS.messages,
   },
   {
     label: "Calls",
-    href: "/calls",
+    href: CALLS_ROUTES.dashboard,
     icon: Phone,
-    disabled: true,
+    group: "calls",
+    permission: MODULE_PERMISSIONS.calls,
   },
   {
     label: "Reports",
     href: "/reports",
     icon: FileText,
-  },
-  {
-    label: "Cases & Tasks",
-    href: "/cases",
-    icon: Activity,
-    disabled: true,
+    permission: MODULE_PERMISSIONS.reports,
   },
 ];
-
-/**
- * Sales & FAX Referrals. Roles that see this section: the same ones the
- * backend allows (app/api/dependencies/fax_portal.py).
- */
-const FAX_PORTAL_ROLES = ["admin", "front_desk", "sales"];
 
 const FAX_PORTAL_PREFIX = "/fax-portal";
 
@@ -128,6 +133,22 @@ const faxPortalNavItems: AdminNavItem[] = [
   },
 ];
 
+const CALLS_PREFIX = "/calls";
+
+const callsNavItems: AdminNavItem[] = [
+  {
+    label: "Dialer",
+    href: CALLS_ROUTES.dialer,
+    icon: PhoneOutgoing,
+    permission: PERMISSIONS.CALLS_CREATE,
+  },
+  {
+    label: "Call History",
+    href: CALLS_ROUTES.history,
+    icon: History,
+  },
+];
+
 const adminNavItems: AdminNavItem[] = [
   {
     label: "Users",
@@ -143,11 +164,7 @@ const adminNavItems: AdminNavItem[] = [
     label: "Clinics",
     href: "/admin/clinics",
     icon: Building2,
-  },
-  {
-    label: "Audit Logs",
-    href: "/admin/audit-logs",
-    icon: BarChart3,
+    disabled: true,
   },
   {
     label: "Notifications",
@@ -187,7 +204,7 @@ function SidebarLink({
 
   const isActive =
     pathname === item.href ||
-    pathname.startsWith(`${item.href}/`);
+    (!item.exact && pathname.startsWith(`${item.href}/`));
 
   const Icon = item.icon;
 
@@ -230,13 +247,37 @@ function SidebarLink({
   );
 }
 
-function FaxPortalGroup({ onNavigate }: { onNavigate?: () => void }) {
+type NavGroupProps = {
+  /** Used for the sub-menu's element id. */
+  id: string;
+  label: string;
+  icon: React.ComponentType<{
+    className?: string;
+  }>;
+  /** The group is active (and opens itself) on this path and everything under it. */
+  prefix: string;
+  items: AdminNavItem[];
+  /** Counts for the items' `badge`s. */
+  counts?: Partial<Record<NonNullable<AdminNavItem["badge"]>, number>>;
+  /** Shown on the collapsed group header. */
+  totalBadge?: number;
+  onNavigate?: () => void;
+};
+
+function NavGroup({
+  id,
+  label,
+  icon: Icon,
+  prefix,
+  items,
+  counts,
+  totalBadge,
+  onNavigate,
+}: NavGroupProps) {
   const pathname = usePathname();
-  const counts = useFaxPortalCounts().data;
 
   const isGroupActive =
-    pathname === FAX_PORTAL_PREFIX ||
-    pathname.startsWith(`${FAX_PORTAL_PREFIX}/`);
+    pathname === prefix || pathname.startsWith(`${prefix}/`);
 
   // The group opens by itself whenever one of its routes becomes active;
   // after that it can still be collapsed or expanded by hand.
@@ -249,15 +290,14 @@ function FaxPortalGroup({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   const isOpen = manualOpen ?? isGroupActive;
-  const totalWaiting =
-    (counts?.call_queue ?? 0) + (counts?.intake_review ?? 0);
+  const submenuId = `${id}-submenu`;
 
   return (
     <div>
       <button
         type="button"
         aria-expanded={isOpen}
-        aria-controls="fax-portal-submenu"
+        aria-controls={submenuId}
         onClick={() => setManualOpen(!isOpen)}
         className={cn(
           "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
@@ -266,10 +306,10 @@ function FaxPortalGroup({ onNavigate }: { onNavigate?: () => void }) {
             : "text-[#d8d2c7] hover:bg-white/10 hover:text-white",
         )}
       >
-        <Inbox className="size-4 shrink-0" />
-        <span className="flex-1 text-left">FAX Portal</span>
+        <Icon className="size-4 shrink-0" />
+        <span className="flex-1 text-left">{label}</span>
 
-        {!isOpen && <CountBadge count={totalWaiting} />}
+        {!isOpen && <CountBadge count={totalBadge} />}
 
         <ChevronDown
           className={cn(
@@ -281,11 +321,11 @@ function FaxPortalGroup({ onNavigate }: { onNavigate?: () => void }) {
 
       {isOpen && (
         <nav
-          id="fax-portal-submenu"
-          aria-label="FAX Portal"
+          id={submenuId}
+          aria-label={label}
           className="mt-1 space-y-1"
         >
-          {faxPortalNavItems.map((item) => (
+          {items.map((item) => (
             <SidebarLink
               key={item.href}
               item={item}
@@ -300,17 +340,53 @@ function FaxPortalGroup({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function FaxPortalGroup({ onNavigate }: { onNavigate?: () => void }) {
+  const counts = useFaxPortalCounts().data;
+
+  return (
+    <NavGroup
+      id="fax-portal"
+      label="FAX Portal"
+      icon={Inbox}
+      prefix={FAX_PORTAL_PREFIX}
+      items={faxPortalNavItems}
+      counts={counts}
+      totalBadge={(counts?.call_queue ?? 0) + (counts?.intake_review ?? 0)}
+      onNavigate={onNavigate}
+    />
+  );
+}
+
+function CallsGroup({ onNavigate }: { onNavigate?: () => void }) {
+  const { hasPermission } = usePermission();
+
+  return (
+    <NavGroup
+      id="calls"
+      label="Calls"
+      icon={Phone}
+      prefix={CALLS_PREFIX}
+      items={callsNavItems.filter(
+        (item) => !item.permission || hasPermission(item.permission),
+      )}
+      onNavigate={onNavigate}
+    />
+  );
+}
+
 /**
  * The logo and every navigation group the signed-in role may see. Used by
  * the fixed sidebar (large screens) and the slide-out menu (small screens).
  */
 export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthStore((state) => state.user);
+  const { hasPermission } = usePermission();
   const isAdmin = user?.role === "admin";
-  const canSeeOperations =
-    user?.role === "admin" || user?.role === "front_desk";
-  const canSeeFaxPortal =
-    user !== null && FAX_PORTAL_ROLES.includes(user.role);
+  const visibleMainNavItems = mainNavItems.filter(
+    (item) => !item.permission || hasPermission(item.permission),
+  );
+  const canSeeOperations = visibleMainNavItems.length > 0;
+  const canSeeFaxPortal = hasPermission(MODULE_PERMISSIONS.faxPortal);
 
   const logoSource = SCANX_LOGO_WHITE_BASE64
     ? SCANX_LOGO_WHITE_BASE64.startsWith("data:image/")
@@ -349,13 +425,17 @@ export function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
             </p>
 
             <nav className="space-y-1">
-              {mainNavItems.map((item) => (
-                <SidebarLink
-                  key={item.href}
-                  item={item}
-                  onNavigate={onNavigate}
-                />
-              ))}
+              {visibleMainNavItems.map((item) =>
+                item.group === "calls" ? (
+                  <CallsGroup key={item.href} onNavigate={onNavigate} />
+                ) : (
+                  <SidebarLink
+                    key={item.href}
+                    item={item}
+                    onNavigate={onNavigate}
+                  />
+                ),
+              )}
             </nav>
           </div>
         )}
