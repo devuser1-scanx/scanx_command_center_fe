@@ -167,10 +167,6 @@ export function PatientProfileView({
       visit.appointmentId === profile.selectedAppointmentId,
   );
 
-  const isCheckedIn =
-    profile.checkin !== null ||
-    selectedVisit?.status === "Checked In";
-
   async function handleManualCheckIn() {
     try {
       const result = await manualCheckInMutation.mutateAsync();
@@ -260,17 +256,12 @@ export function PatientProfileView({
           {canManualCheckIn && (
             <ActionButton
               label={
-                isCheckedIn
-                  ? "Checked In"
-                  : manualCheckInMutation.isPending
-                    ? "Checking In…"
-                    : "Manual Check-in"
+                manualCheckInMutation.isPending
+                  ? "Checking In…"
+                  : "Manual Check-in"
               }
               className="bg-[#04863B] hover:bg-[#037333]"
-              disabled={
-                isCheckedIn ||
-                manualCheckInMutation.isPending
-              }
+              disabled={manualCheckInMutation.isPending}
               onClick={() =>
                 setIsManualCheckInDialogOpen(true)
               }

@@ -3,6 +3,7 @@
 export const PERMISSIONS = {
   APPOINTMENTS_UPDATE: "appointments.update",
   CALLS_CREATE: "calls.create",
+  MESSAGES_SEND: "messages.send",
 } as const;
 
 /**

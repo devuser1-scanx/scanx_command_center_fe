@@ -205,4 +205,26 @@ export const API_ENDPOINTS = {
 
     ended: (callId: number) => `/calls/${callId}/ended`,
   },
+
+  /** The Messages module (the Patient Inbox). */
+  inbox: {
+    conversations: "/inbox/conversations",
+    newConversation: "/inbox/conversations/new",
+    catalog: "/inbox/catalog",
+    sendRcsCard: "/inbox/send-rcs-card",
+    sendMissedCallCard: "/inbox/send-missed-call-card",
+    sendGenericSalesCard: "/inbox/send-generic-sales-card",
+
+    conversation: (conversationId: string) =>
+      `/inbox/conversations/${encodeURIComponent(conversationId)}`,
+
+    messages: (conversationId: string) =>
+      `/inbox/conversations/${encodeURIComponent(conversationId)}/messages`,
+
+    read: (conversationId: string) =>
+      `/inbox/conversations/${encodeURIComponent(conversationId)}/read`,
+
+    reply: (conversationId: string) =>
+      `/inbox/conversations/${encodeURIComponent(conversationId)}/reply`,
+  },
 } as const;

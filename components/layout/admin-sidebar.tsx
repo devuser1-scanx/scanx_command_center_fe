@@ -82,7 +82,6 @@ const mainNavItems: AdminNavItem[] = [
     label: "Messages",
     href: "/messages",
     icon: MessageSquare,
-    disabled: true,
     permission: MODULE_PERMISSIONS.messages,
   },
   {
