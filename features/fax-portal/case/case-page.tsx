@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { ReassignDialog } from "@/features/fax-portal/board/board-dialogs";
 import { CallCard } from "@/features/fax-portal/case/call-card";
@@ -17,11 +19,14 @@ import { useCase } from "@/features/fax-portal/hooks/use-case";
 import {
   useAssignReferral,
   useFaxPortalAgents,
+  useMoveReferral,
 } from "@/features/fax-portal/hooks/use-referral-actions";
 import { FaxPdfViewer } from "@/features/fax-portal/intake/fax-pdf-viewer";
 import { caseHref } from "@/features/fax-portal/queue/call-queue";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { FAX_PORTAL_ROUTES } from "@/lib/constants/routes";
+
+const WORKING = ["ready_for_contact", "follow_up_due", "callback_requested"];
 
 /** Remembered so the Referral Case page can offer to continue where you left off. */
 export const LAST_CASE_KEY = "fax-portal.case.last";
@@ -32,6 +37,7 @@ export function CasePage({ referralId }: { referralId: number }) {
 
   const caseQuery = useCase(referralId);
   const assign = useAssignReferral();
+  const move = useMoveReferral();
 
   // Opened from My Call Queue (power dial): offer the next referral to call.
   const fromQueue = useSearchParams().get("from") === "queue";
@@ -133,6 +139,57 @@ export function CasePage({ referralId }: { referralId: number }) {
               )
             )}
           </>
+        )}
+
+        {/* Any referral can be reopened by whoever works it, from any column. */}
+        {!WORKING.includes(detail.status) && detail.status !== "review_required" && (
+          <Button
+            type="button"
+            size="xs"
+            disabled={move.isPending}
+            className="ml-auto bg-[#1e8a4c] text-white hover:bg-[#19753f]"
+            onClick={() =>
+              move.mutate(
+                {
+                  referralId: detail.id,
+                  toStatus: "ready_for_contact",
+                  rowVersion: detail.row_version,
+                  source: "button",
+                },
+                {
+                  onSuccess: () =>
+                    toast.success("Reopened: back in Ready for Contact."),
+                },
+              )
+            }
+          >
+            {move.isPending ? "Reopening…" : "Reopen for calling"}
+          </Button>
+        )}
+
+        {/* So the agent can correct details in Intake Review, then release again. */}
+        {detail.status !== "review_required" && (
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            disabled={move.isPending}
+            onClick={() =>
+              move.mutate(
+                {
+                  referralId: detail.id,
+                  toStatus: "review_required",
+                  rowVersion: detail.row_version,
+                  source: "button",
+                },
+                {
+                  onSuccess: () => toast.success("Sent back to Intake Review."),
+                },
+              )
+            }
+          >
+            Send to Intake Review
+          </Button>
         )}
 
         {isManager && (

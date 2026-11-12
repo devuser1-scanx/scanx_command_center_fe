@@ -5,7 +5,6 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,6 @@ type DialogState =
   | { kind: "not_referral"; card: BoardCard }
   | { kind: "booked"; card: BoardCard }
   | { kind: "fax_pending"; card: BoardCard }
-  | { kind: "reopen"; card: BoardCard; to: ReferralStatusCode }
   | { kind: "reassign"; card: BoardCard }
   | null;
 
@@ -44,12 +42,6 @@ const ASSIGNEE_TABS: Array<{ value: BoardAssigneeFilter; label: string }> = [
   { value: "all", label: "All agents" },
   { value: "me", label: "Mine" },
   { value: "unassigned", label: "Unassigned" },
-];
-
-const WORKING_STATUSES: ReferralStatusCode[] = [
-  "ready_for_contact",
-  "follow_up_due",
-  "callback_requested",
 ];
 
 function SummaryPill({
@@ -194,24 +186,12 @@ export function ReferralBoard() {
       return;
     }
 
-    const fromColumn = columns.find((column) => column.code === card.status);
-    const fromClosed = fromColumn ? !fromColumn.is_open : false;
-
     if (toStatus === "not_referral" && card.status === "review_required") {
       setDialog({ kind: "not_referral", card });
     } else if (toStatus === "appointment_booked") {
       setDialog({ kind: "booked", card });
     } else if (toStatus === "fax_provider_name_pending") {
       setDialog({ kind: "fax_pending", card });
-    } else if (
-      fromClosed &&
-      (WORKING_STATUSES.includes(toStatus) || toStatus === "review_required")
-    ) {
-      if (isManager) {
-        setDialog({ kind: "reopen", card, to: toStatus });
-      } else {
-        toast.error("Only a manager can reopen a closed referral.");
-      }
     } else {
       runMove(card, toStatus);
     }
@@ -419,20 +399,6 @@ export function ReferralBoard() {
               acuityAppointmentId,
             })
           }
-        />
-      )}
-
-      {dialog?.kind === "reopen" && (
-        <TextPromptDialog
-          title="Reopen referral"
-          description={`Reopen ${patientName(dialog.card)} and move it back to work.`}
-          label="Why is it being reopened?"
-          multiline
-          maxLength={2000}
-          confirmLabel="Reopen"
-          isPending={moveMutation.isPending}
-          onClose={() => setDialog(null)}
-          onSubmit={(note) => runMove(dialog.card, dialog.to, { note })}
         />
       )}
 

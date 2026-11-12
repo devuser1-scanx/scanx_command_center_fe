@@ -8,7 +8,6 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   Building2,
-  ChartLine,
   ChevronDown,
   ClipboardCheck,
   FileText,
@@ -123,12 +122,6 @@ const faxPortalNavItems: AdminNavItem[] = [
     label: "Referral Case",
     href: FAX_PORTAL_ROUTES.case,
     icon: FolderOpen,
-  },
-  {
-    label: "Referral Insights",
-    href: FAX_PORTAL_ROUTES.insights,
-    icon: ChartLine,
-    disabled: true,
   },
 ];
 

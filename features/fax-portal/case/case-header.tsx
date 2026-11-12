@@ -250,7 +250,7 @@ export function CaseHeader({ detail, onViewFax }: CaseHeaderProps) {
       {!editable && (
         <p className="mb-2 rounded-md bg-[#fcf1dc] px-3 py-2 text-xs text-[#b7791f]">
           This referral is closed, so the details can no longer be edited. A
-          manager can reopen it from the board.
+          use Reopen for calling at the top of the page to work it again.
         </p>
       )}
 
