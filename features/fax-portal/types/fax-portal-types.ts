@@ -505,7 +505,11 @@ export type FaxBackDraft = {
   original_fax_available: boolean;
 };
 
+/** Why the referring physician is faxed: patient not reached, or wants insurance. */
+export type FaxBackKind = "unreachable" | "insurance";
+
 export type FaxBackInput = {
+  kind: FaxBackKind;
   destination_number: string;
   subject: string;
   body: string;

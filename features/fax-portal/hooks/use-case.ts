@@ -38,6 +38,7 @@ import type {
   DirectBookResponse,
   FaxBackDraft,
   FaxBackInput,
+  FaxBackKind,
   FaxBackResponse,
   IntakeUpdateResponse,
   MessageTemplate,
@@ -282,14 +283,18 @@ export function useBookingInfo(referralId: number, enabled = true) {
 }
 
 /** The starting text for the fax-back pop-up; looked up when it opens. */
-export function useFaxBackDraft(referralId: number, enabled: boolean) {
+export function useFaxBackDraft(
+  referralId: number,
+  kind: FaxBackKind,
+  enabled: boolean,
+) {
   return useQuery<FaxBackDraft, Error>({
-    queryKey: ["fax-portal", "fax-back", referralId],
+    queryKey: ["fax-portal", "fax-back", referralId, kind],
     enabled,
 
     queryFn: async () => {
       try {
-        return await getFaxBackDraft(referralId);
+        return await getFaxBackDraft(referralId, kind);
       } catch (error) {
         throw normalizeApiError(error, "Unable to prepare the fax.");
       }

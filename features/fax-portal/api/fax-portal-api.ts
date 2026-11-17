@@ -10,6 +10,7 @@ import type {
   DirectBookResponse,
   FaxBackDraft,
   FaxBackInput,
+  FaxBackKind,
   FaxBackResponse,
   CallResultInput,
   CallResultResponse,
@@ -284,8 +285,13 @@ export async function sendMessage(
 }
 
 /** The starting text for the "fax back to the referring physician" pop-up. */
-export async function getFaxBackDraft(referralId: number): Promise<FaxBackDraft> {
-  return apiClient.get<FaxBackDraft>(API_ENDPOINTS.faxPortal.faxBack(referralId));
+export async function getFaxBackDraft(
+  referralId: number,
+  kind: FaxBackKind,
+): Promise<FaxBackDraft> {
+  return apiClient.get<FaxBackDraft>(
+    `${API_ENDPOINTS.faxPortal.faxBack(referralId)}?kind=${kind}`,
+  );
 }
 
 /** Faxes the referring physician that the patient could not be reached. */

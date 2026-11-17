@@ -16,7 +16,10 @@ import {
   useFaxBackDraft,
   useSendFaxBack,
 } from "@/features/fax-portal/hooks/use-case";
-import type { FaxBackDraft } from "@/features/fax-portal/types/fax-portal-types";
+import type {
+  FaxBackDraft,
+  FaxBackKind,
+} from "@/features/fax-portal/types/fax-portal-types";
 
 /** WestFax's email-to-fax gateway: an email to <number>@westfax.com is faxed. */
 const FAX_DOMAIN = "westfax.com";
@@ -40,6 +43,7 @@ const FIELD =
 
 type FaxBackDialogProps = {
   referralId: number;
+  kind: FaxBackKind;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -51,10 +55,11 @@ type FaxBackDialogProps = {
  */
 export function FaxBackDialog({
   referralId,
+  kind,
   open,
   onOpenChange,
 }: FaxBackDialogProps) {
-  const draft = useFaxBackDraft(referralId, open);
+  const draft = useFaxBackDraft(referralId, kind, open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,6 +80,7 @@ export function FaxBackDialog({
           // Mounted once the draft has arrived, so the fields start from it.
           <FaxBackForm
             referralId={referralId}
+            kind={kind}
             draft={draft.data}
             onClose={() => onOpenChange(false)}
           />
@@ -86,10 +92,12 @@ export function FaxBackDialog({
 
 function FaxBackForm({
   referralId,
+  kind,
   draft,
   onClose,
 }: {
   referralId: number;
+  kind: FaxBackKind;
   draft: FaxBackDraft;
   onClose: () => void;
 }) {
@@ -112,6 +120,7 @@ function FaxBackForm({
   async function handleSend() {
     try {
       const result = await send.mutateAsync({
+        kind,
         destination_number: toFaxAddress(destination),
         subject,
         body,

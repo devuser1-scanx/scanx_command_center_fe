@@ -30,6 +30,7 @@ import {
   type CallResultCode,
   type CallResultInput,
   type CaseDetail,
+  type FaxBackKind,
 } from "@/features/fax-portal/types/fax-portal-types";
 import { cn } from "@/lib/utils";
 
@@ -212,7 +213,8 @@ export function CallCard({ detail }: CallCardProps) {
   const [callbackFor, setCallbackFor] = useState(false);
   const [callbackAt, setCallbackAt] = useState(defaultCallback);
   const [directBookingFor, setDirectBookingFor] = useState(false);
-  const [faxBackFor, setFaxBackFor] = useState(false);
+  // Which fax-back pop-up is open: patient not reached, or wants insurance.
+  const [faxBackKind, setFaxBackKind] = useState<FaxBackKind | null>(null);
   const [confirmDeclined, setConfirmDeclined] = useState(false);
   const [confirmDnc, setConfirmDnc] = useState(false);
 
@@ -582,9 +584,20 @@ export function CallCard({ detail }: CallCardProps) {
           // the physician is faxed from there too.
           disabled={!detail.is_open && detail.status !== "didnt_respond"}
           title="Tells the referring physician by fax that the patient could not be reached"
-          onClick={() => setFaxBackFor(true)}
+          onClick={() => setFaxBackKind("unreachable")}
         >
           Fax referring physician
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={!detail.is_open && detail.status !== "didnt_respond"}
+          title="Returns the referral by fax: the patient wants to use insurance and ScanX is self-pay only"
+          onClick={() => setFaxBackKind("insurance")}
+        >
+          Insurance - send back to referring physician
         </Button>
 
         <Button
@@ -664,11 +677,16 @@ export function CallCard({ detail }: CallCardProps) {
         </div>
       )}
 
-      {faxBackFor && (
+      {faxBackKind && (
         <FaxBackDialog
           referralId={detail.id}
+          kind={faxBackKind}
           open
-          onOpenChange={setFaxBackFor}
+          onOpenChange={(open) => {
+            if (!open) {
+              setFaxBackKind(null);
+            }
+          }}
         />
       )}
 
