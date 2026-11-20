@@ -14,6 +14,8 @@ import {
   directBook,
   getDirectBookingDates,
   getFaxBackDraft,
+  getPrefillLinkDraft,
+  sendPrefillLink,
   getDirectBookingTimes,
   getBookingInfo,
   getCase,
@@ -42,6 +44,7 @@ import type {
   FaxBackResponse,
   IntakeUpdateResponse,
   MessageTemplate,
+  PrefillLinkDraft,
   ReferralSearchItem,
   SendMessageResponse,
 } from "@/features/fax-portal/types/fax-portal-types";
@@ -279,6 +282,49 @@ export function useBookingInfo(referralId: number, enabled = true) {
     },
 
     staleTime: 0,
+  });
+}
+
+/** The text the patient will get with their booking link; looked up when the
+ * confirmation opens. */
+export function usePrefillLinkDraft(referralId: number, enabled: boolean) {
+  return useQuery<PrefillLinkDraft, Error>({
+    queryKey: ["fax-portal", "prefill-link", referralId],
+    enabled,
+
+    queryFn: async () => {
+      try {
+        return await getPrefillLinkDraft(referralId);
+      } catch (error) {
+        throw normalizeApiError(error, "Unable to prepare the link.");
+      }
+    },
+
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  });
+}
+
+/** Texts the patient their personal booking link; the case refreshes after. */
+export function useSendPrefillLink(referralId: number) {
+  const refresh = useRefreshCase(referralId);
+
+  return useMutation<SendMessageResponse, Error>({
+    mutationFn: async () => {
+      try {
+        return await sendPrefillLink(referralId);
+      } catch (error) {
+        throw normalizeApiError(error, "Unable to send the link.");
+      }
+    },
+
+    onSuccess: refresh,
+
+    onError: (error) => {
+      toast.error(error.message);
+      refresh();
+    },
   });
 }
 

@@ -109,6 +109,10 @@ export const API_ENDPOINTS = {
 
     transvagFormLink: (patientId: string) =>
       `/patients/${encodeURIComponent(patientId)}/transvag-form-link`,
+
+    /** GET: the latest image invoice for the appointment. POST: send one. */
+    imageInvoice: (patientId: string) =>
+      `/patients/${encodeURIComponent(patientId)}/image-invoice`,
   },
 
   reports: {
@@ -175,6 +179,9 @@ export const API_ENDPOINTS = {
 
     directBookingTimes: (referralId: number, date: string) =>
       `/fax-portal/referrals/${referralId}/direct-booking/times?date=${date}`,
+
+    prefillLink: (referralId: number) =>
+      `/fax-portal/referrals/${referralId}/prefill-link`,
 
     faxBack: (referralId: number) =>
       `/fax-portal/referrals/${referralId}/fax-back`,

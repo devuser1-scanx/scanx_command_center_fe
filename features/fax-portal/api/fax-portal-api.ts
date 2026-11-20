@@ -18,6 +18,7 @@ import type {
   DialCallResponse,
   CaseUpdate,
   MessageTemplate,
+  PrefillLinkDraft,
   ReferralSearchItem,
   SendMessageResponse,
   AcuityCalendar,
@@ -281,6 +282,24 @@ export async function sendMessage(
   return apiClient.post<SendMessageResponse>(
     API_ENDPOINTS.faxPortal.sendMessage(referralId),
     { body, template_code: templateCode },
+  );
+}
+
+/** The text the patient would get with their personal booking link. */
+export async function getPrefillLinkDraft(
+  referralId: number,
+): Promise<PrefillLinkDraft> {
+  return apiClient.get<PrefillLinkDraft>(
+    API_ENDPOINTS.faxPortal.prefillLink(referralId),
+  );
+}
+
+/** Texts the patient a personal link to the Acuity page, details prefilled. */
+export async function sendPrefillLink(
+  referralId: number,
+): Promise<SendMessageResponse> {
+  return apiClient.post<SendMessageResponse>(
+    API_ENDPOINTS.faxPortal.prefillLink(referralId),
   );
 }
 

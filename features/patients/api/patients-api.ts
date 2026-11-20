@@ -821,3 +821,72 @@ export async function manualCheckIn(
     },
   };
 }
+
+/**
+ * The fixed $45 Stripe invoice for a patient's ultrasound exam images.
+ * status: pending | sent | paid | failed | void | uncollectible
+ */
+export type ImageInvoice = {
+  id: number;
+  appointmentId: string;
+  status: string;
+  amountCents: number;
+  currency: string;
+  customerEmail: string;
+  hostedInvoiceUrl: string | null;
+  errorMessage: string | null;
+  sentAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+};
+
+type ApiImageInvoice = {
+  id: number;
+  appointment_id: string;
+  status: string;
+  amount_cents: number;
+  currency: string;
+  customer_email: string;
+  hosted_invoice_url: string | null;
+  error_message: string | null;
+  sent_at: string | null;
+  paid_at: string | null;
+  created_at: string;
+};
+
+function mapImageInvoice(item: ApiImageInvoice): ImageInvoice {
+  return {
+    id: item.id,
+    appointmentId: item.appointment_id,
+    status: item.status,
+    amountCents: item.amount_cents,
+    currency: item.currency,
+    customerEmail: item.customer_email,
+    hostedInvoiceUrl: item.hosted_invoice_url,
+    errorMessage: item.error_message,
+    sentAt: item.sent_at,
+    paidAt: item.paid_at,
+    createdAt: item.created_at,
+  };
+}
+
+/** The latest image invoice for the appointment, or null if none was sent. */
+export async function getImageInvoice(
+  appointmentId: string,
+): Promise<ImageInvoice | null> {
+  const response = await apiClient.get<ApiImageInvoice | null>(
+    API_ENDPOINTS.patients.imageInvoice(appointmentId),
+  );
+
+  return response ? mapImageInvoice(response) : null;
+}
+
+export async function sendImageInvoice(
+  appointmentId: string,
+): Promise<ImageInvoice> {
+  const response = await apiClient.post<ApiImageInvoice>(
+    API_ENDPOINTS.patients.imageInvoice(appointmentId),
+  );
+
+  return mapImageInvoice(response);
+}

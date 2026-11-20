@@ -4,6 +4,7 @@ export const PERMISSIONS = {
   APPOINTMENTS_UPDATE: "appointments.update",
   CALLS_CREATE: "calls.create",
   MESSAGES_SEND: "messages.send",
+  PATIENTS_IMAGE_INVOICE: "patients.image_invoice",
 } as const;
 
 /**

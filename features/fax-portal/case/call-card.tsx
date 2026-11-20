@@ -10,7 +10,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { STATUS_LABELS, formatWhen } from "@/features/fax-portal/board/board-meta";
 import { FaxBackDialog } from "@/features/fax-portal/case/fax-back-dialog";
-import { DirectBookingDialog } from "@/features/fax-portal/case/direct-booking-dialog";
+import { PrefillLinkDialog } from "@/features/fax-portal/case/prefill-link-dialog";
 import {
   type BrowserCallState,
   BrowserCallError,
@@ -37,12 +37,6 @@ import { cn } from "@/lib/utils";
 type CallCardProps = {
   detail: CaseDetail;
 };
-
-/**
- * "Book in Acuity with these details" opens the direct-booking dialog (pick an
- * open time, and Acuity books it). Off until that is rolled out.
- */
-const DIRECT_BOOKING_ENABLED = false;
 
 /** The small caption under each result button. */
 const RESULT_HINT: Record<CallResultCode, string> = {
@@ -212,7 +206,7 @@ export function CallCard({ detail }: CallCardProps) {
   const [otherCounts, setOtherCounts] = useState(false);
   const [callbackFor, setCallbackFor] = useState(false);
   const [callbackAt, setCallbackAt] = useState(defaultCallback);
-  const [directBookingFor, setDirectBookingFor] = useState(false);
+  const [prefillLinkOpen, setPrefillLinkOpen] = useState(false);
   // Which fax-back pop-up is open: patient not reached, or wants insurance.
   const [faxBackKind, setFaxBackKind] = useState<FaxBackKind | null>(null);
   const [confirmDeclined, setConfirmDeclined] = useState(false);
@@ -548,22 +542,17 @@ export function CallCard({ detail }: CallCardProps) {
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {/* Books the appointment in Acuity from here (the direct-booking
-            dialog). Switched off until that is rolled out: set
-            DIRECT_BOOKING_ENABLED to true. */}
+        {/* Texts the patient a personal link to the Acuity booking page, with
+            their details already filled in. */}
         <Button
           type="button"
           size="sm"
-          disabled={!DIRECT_BOOKING_ENABLED}
-          title={
-            DIRECT_BOOKING_ENABLED
-              ? "Books the appointment in Acuity right here: pick an open time."
-              : "Coming soon."
-          }
-          onClick={() => setDirectBookingFor(true)}
+          disabled={!detail.is_open}
+          title="Texts the patient a secure link to pick a date and time, with their details already filled in"
+          onClick={() => setPrefillLinkOpen(true)}
           className="bg-[#2f6fc0] text-white"
         >
-          Book in Acuity with these details
+          Send prefill link to patient
         </Button>
 
         <Button
@@ -690,18 +679,11 @@ export function CallCard({ detail }: CallCardProps) {
         />
       )}
 
-      {directBookingFor && (
-        <DirectBookingDialog
+      {prefillLinkOpen && (
+        <PrefillLinkDialog
           referralId={detail.id}
-          patientName={
-            [detail.fields.first_name, detail.fields.last_name]
-              .filter(Boolean)
-              .join(" ") || "the patient"
-          }
-          examName={detail.exam_1?.name ?? null}
-          clinicName={detail.clinic?.name ?? null}
-          email={detail.fields.email}
-          onClose={() => setDirectBookingFor(false)}
+          open
+          onOpenChange={setPrefillLinkOpen}
         />
       )}
 

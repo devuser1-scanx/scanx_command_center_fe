@@ -11,8 +11,10 @@ import {
   ActionButton,
   ActionMenuButton,
 } from "@/features/patients/patient-action-buttons";
+import { useImageInvoice } from "@/features/patients/hooks/use-image-invoice";
 import { useManualCheckIn } from "@/features/patients/hooks/use-manual-check-in";
 import { usePatientProfile } from "@/features/patients/hooks/use-patient-profile";
+import { useSendImageInvoice } from "@/features/patients/hooks/use-send-image-invoice";
 import { SendFaxDialog } from "@/features/patients/send-fax-dialog";
 import {
   SendMailDialog,
@@ -103,6 +105,17 @@ export function PatientProfileView({
   const manualCheckInMutation = useManualCheckIn(appointmentId);
   const { hasPermission } = usePermission();
 
+  const canSendImageInvoice = hasPermission(
+    PERMISSIONS.PATIENTS_IMAGE_INVOICE,
+  );
+  const imageInvoiceQuery = useImageInvoice(
+    appointmentId,
+    canSendImageInvoice,
+  );
+  const sendImageInvoiceMutation = useSendImageInvoice(appointmentId);
+
+  const [isImageInvoiceDialogOpen, setIsImageInvoiceDialogOpen] =
+    useState(false);
   const [isFaxDialogOpen, setIsFaxDialogOpen] = useState(false);
   const [isMailDialogOpen, setIsMailDialogOpen] = useState(false);
   const [mailPurpose, setMailPurpose] = useState<MailPurpose>("report");
@@ -199,6 +212,56 @@ export function PatientProfileView({
         error instanceof Error
           ? error.message
           : "Unable to check in this patient.",
+      );
+    }
+  }
+
+  // Invoices are only ever sent to the appointment's own email address, shown
+  // read-only in the confirmation - there is nothing to type or mistype.
+  const imageInvoice = imageInvoiceQuery.data ?? null;
+  const imageInvoiceActive =
+    imageInvoice?.status === "sent" ||
+    imageInvoice?.status === "paid" ||
+    imageInvoice?.status === "pending";
+
+  function handleImageInvoiceClick() {
+    // The button is never disabled; an invoice that is already out is
+    // explained here instead of opening the dialog (the backend would refuse
+    // the send with a 409 anyway).
+    if (imageInvoice?.status === "paid") {
+      toast.info("The image invoice for this appointment has already been paid.");
+      return;
+    }
+
+    if (imageInvoiceActive) {
+      toast.info(
+        "An image invoice has already been sent for this appointment and is awaiting payment.",
+      );
+      return;
+    }
+
+    if (!profile.email?.trim()) {
+      toast.error(
+        "This appointment has no email address. Add the patient's email to the appointment before sending an invoice.",
+      );
+      return;
+    }
+
+    setIsImageInvoiceDialogOpen(true);
+  }
+
+  async function handleSendImageInvoice() {
+    try {
+      const invoice = await sendImageInvoiceMutation.mutateAsync();
+
+      setIsImageInvoiceDialogOpen(false);
+      toast.success(`Image invoice sent to ${invoice.customerEmail}.`);
+    } catch (error) {
+      setIsImageInvoiceDialogOpen(false);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to send the image invoice.",
       );
     }
   }
@@ -300,6 +363,14 @@ export function PatientProfileView({
             onClick={() => setSmsPurpose("payment_link")}
           />
 
+          {canSendImageInvoice && (
+            <ActionButton
+              label="Send Image Invoice ($45)"
+              className="bg-[#0d9488] hover:bg-[#0f766e]"
+              onClick={handleImageInvoiceClick}
+            />
+          )}
+
           <ActionButton
             label="Directions"
             className="bg-[#0891b2] hover:bg-[#0e7490]"
@@ -340,6 +411,38 @@ export function PatientProfileView({
             }}
           />
         </div>
+
+        {canSendImageInvoice && imageInvoice && (
+          <p className="mt-3 text-center text-xs text-[#777777]">
+            Image invoice ($
+            {(imageInvoice.amountCents / 100).toFixed(2)}):{" "}
+            <span className="font-semibold text-[#2d2d2d]">
+              {imageInvoice.status === "paid"
+                ? `paid ${formatDateTime(imageInvoice.paidAt)}`
+                : imageInvoice.status === "sent"
+                  ? `sent to ${imageInvoice.customerEmail} ${formatDateTime(imageInvoice.sentAt)} - awaiting payment`
+                  : imageInvoice.status}
+            </span>
+            {imageInvoice.status === "failed" && imageInvoice.errorMessage
+              ? ` (${imageInvoice.errorMessage})`
+              : null}
+            {imageInvoice.hostedInvoiceUrl &&
+            (imageInvoice.status === "sent" ||
+              imageInvoice.status === "paid") ? (
+              <>
+                {" · "}
+                <a
+                  href={imageInvoice.hostedInvoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-[#8b6f47] hover:underline"
+                >
+                  View invoice
+                </a>
+              </>
+            ) : null}
+          </p>
+        )}
       </section>
 
       <div className="grid gap-5 xl:grid-cols-[280px_1fr]">
@@ -704,6 +807,17 @@ export function PatientProfileView({
         pendingLabel="Checking In…"
         isPending={manualCheckInMutation.isPending}
         onConfirm={handleManualCheckIn}
+      />
+
+      <ConfirmDialog
+        open={isImageInvoiceDialogOpen}
+        onOpenChange={setIsImageInvoiceDialogOpen}
+        title="Send Image Invoice"
+        description={`Send a $45.00 invoice for ${profile.patient}'s ultrasound exam images to ${profile.email ?? ""}? Stripe will email it to the patient with a link to pay online.`}
+        confirmLabel="Send Invoice"
+        pendingLabel="Sending…"
+        isPending={sendImageInvoiceMutation.isPending}
+        onConfirm={handleSendImageInvoice}
       />
 
       <SendFaxDialog

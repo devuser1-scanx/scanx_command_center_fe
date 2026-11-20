@@ -505,6 +505,16 @@ export type FaxBackDraft = {
   original_fax_available: boolean;
 };
 
+/** The "Send prefill link to patient" confirmation. */
+export type PrefillLinkDraft = {
+  /** The text the patient gets; [personal link] stands in for their link. */
+  message: string;
+  /** True when it goes as an RCS card with a Book Appointment button. */
+  as_card: boolean;
+  /** Why it cannot be sent yet; null when it can. */
+  blocked_reason: string | null;
+};
+
 /** Why the referring physician is faxed: patient not reached, or wants insurance. */
 export type FaxBackKind = "unreachable" | "insurance";
 
